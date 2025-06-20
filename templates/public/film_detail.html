@@ -373,35 +373,29 @@ History{% endblock %} {% block head_extra %}
 </div>
 {% endblock %} {% block scripts_extra %} {% if ratings %}
 <script>
-  // Chart.js script remains the same as in your original file
-  // ... (existing script content) ...
   document.addEventListener('DOMContentLoaded', function () {
     const chartContainer = document.querySelector('.chart-container');
     const canvasElement = document.getElementById('ratingChart');
-
-    if (!canvasElement) {
-      return;
-    }
+    if (!canvasElement) return;
 
     const loadingDiv = document.createElement('div');
     loadingDiv.className =
       'chart-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
     loadingDiv.style.backgroundColor = 'var(--card-bg)';
     loadingDiv.innerHTML = `
-          <div class="text-center">
-            <i class="fas fa-spinner fa-2x mb-2" style="color: var(--accent-color);"></i>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">Loading rating data...</p>
-          </div>
-        `;
+      <div class="text-center">
+        <i class="fas fa-spinner fa-2x mb-2" style="color: var(--accent-color);"></i>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Loading rating data...</p>
+      </div>
+    `;
     canvasElement.parentNode.insertBefore(loadingDiv, canvasElement);
 
     fetch(
       "{{ url_for('api_film_ratings', letterboxd_slug=film.letterboxd_slug) }}"
     )
       .then((response) => {
-        if (!response.ok) {
+        if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
-        }
         return response.json();
       })
       .then((data) => {
@@ -437,14 +431,13 @@ History{% endblock %} {% block head_extra %}
           let r = 0,
             g = 0,
             b = 0;
-          if (!hex || typeof hex !== 'string') hex = '#000000'; // Default if invalid
-          if (hex.startsWith('rgba')) return hex; // Already rgba
+          if (!hex || typeof hex !== 'string') hex = '#000000';
+          if (hex.startsWith('rgba')) return hex;
           if (hex.startsWith('rgb')) {
-            // Convert rgb to rgba
             const parts = hex.match(/[\d.]+/g);
             if (parts && parts.length >= 3)
               return `rgba(${parts[0]},${parts[1]},${parts[2]},${alpha})`;
-            return `rgba(0,0,0,${alpha})`; // Fallback
+            return `rgba(0,0,0,${alpha})`;
           }
           hex = hex.replace('#', '');
           if (hex.length === 3) {
@@ -456,29 +449,26 @@ History{% endblock %} {% block head_extra %}
           return `rgba(${r},${g},${b},${alpha})`;
         }
 
-        const gradient = ctx.createLinearGradient(
-          0,
-          0,
-          0,
-          chartContainer.offsetHeight * 0.7
-        );
-        gradient.addColorStop(0, hexToRgba(accentColor, 0.35));
-        gradient.addColorStop(1, hexToRgba(accentColor, 0.05));
+        // Prepare data for both datasets
+        const avgData = data.datasets[0].data.map((value, index) => ({
+          x: new Date(data.labels[index]).valueOf(),
+          y: value,
+        }));
+        const countData = data.datasets[1].data.map((value, index) => ({
+          x: new Date(data.labels[index]).valueOf(),
+          y: value,
+        }));
 
-        const isSinglePoint = data.datasets[0].data.length === 1;
-
-        let yMin = 0.5;
-        let yMax = 5.0;
-        const allRatings = data.datasets[0].data
-          .filter(
-            (r) => r !== null && r !== undefined && typeof r.y === 'number' // Ensure data points are objects with y property
-          )
+        // Find yMin/yMax for ratings
+        const allRatings = avgData
+          .filter((r) => r && typeof r.y === 'number')
           .map((r) => r.y);
-
+        let yMin = 0.5,
+          yMax = 5.0;
         if (allRatings.length > 0) {
           const minRatingVal = Math.min(...allRatings);
           const maxRatingVal = Math.max(...allRatings);
-          const rangeBuffer = isSinglePoint ? 0.5 : 0.2;
+          const rangeBuffer = avgData.length === 1 ? 0.5 : 0.2;
           yMin = Math.max(
             0.5,
             parseFloat((minRatingVal - rangeBuffer).toFixed(1))
@@ -488,37 +478,69 @@ History{% endblock %} {% block head_extra %}
             parseFloat((maxRatingVal + rangeBuffer).toFixed(1))
           );
           if (yMax - yMin < 0.5) {
-            // Ensure a minimum visual range
             const mid = (yMin + yMax) / 2;
             yMin = Math.max(0.5, parseFloat((mid - 0.25).toFixed(1)));
             yMax = Math.min(5.0, parseFloat((mid + 0.25).toFixed(1)));
           }
         }
 
-        // Transform data for Chart.js if it's not already in {x, y} format
-        const chartData = data.datasets[0].data.map((value, index) => {
-          return { x: new Date(data.labels[index]).valueOf(), y: value };
-        });
+        // Find yMin/yMax for rating count
+        const allCounts = countData
+          .filter((r) => r && typeof r.y === 'number')
+          .map((r) => r.y);
+        let countMin = 0,
+          countMax = 10;
+        if (allCounts.length > 0) {
+          countMin = Math.min(...allCounts);
+          countMax = Math.max(...allCounts);
+          if (countMin === countMax) countMax += 10;
+        }
+
+        // Gradient for rating line
+        const gradient = ctx.createLinearGradient(
+          0,
+          0,
+          0,
+          chartContainer.offsetHeight * 0.7
+        );
+        gradient.addColorStop(0, hexToRgba(accentColor, 0.35));
+        gradient.addColorStop(1, hexToRgba(accentColor, 0.05));
 
         new Chart(ctx, {
           type: 'line',
           data: {
-            // labels: data.labels, // Not needed if x is time series
             datasets: [
               {
                 label: 'Average Rating',
-                data: chartData, // Use transformed data
+                data: avgData,
                 borderColor: accentColor,
                 backgroundColor: gradient,
                 borderWidth: 2,
                 fill: true,
-                tension: isSinglePoint ? 0 : 0.4,
+                tension: avgData.length === 1 ? 0 : 0.4,
                 pointBackgroundColor: accentColor,
                 pointBorderColor: cardBgColor,
                 pointBorderWidth: 1.5,
-                pointRadius: isSinglePoint ? 6 : 4,
-                pointHoverRadius: isSinglePoint ? 9 : 7,
-                showLine: !isSinglePoint || chartData.length > 1,
+                pointRadius: avgData.length === 1 ? 6 : 4,
+                pointHoverRadius: avgData.length === 1 ? 9 : 7,
+                showLine: !(avgData.length === 1),
+                yAxisID: 'y',
+                order: 1,
+              },
+              {
+                label: 'Rating Count',
+                data: countData,
+                borderColor: hexToRgba(textColorSecondary, 0.5),
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.1,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                yAxisID: 'yCount',
+                order: 2,
+                borderDash: [4, 4],
+                spanGaps: true,
               },
             ],
           },
@@ -546,7 +568,6 @@ History{% endblock %} {% block head_extra %}
                 boxPadding: 4,
                 callbacks: {
                   title: (tooltipItems) => {
-                    // Access the raw data point which includes the original label (timestamp)
                     const originalTimestamp = tooltipItems[0].raw.x;
                     return new Date(originalTimestamp).toLocaleDateString(
                       'en-US',
@@ -560,7 +581,13 @@ History{% endblock %} {% block head_extra %}
                       }
                     );
                   },
-                  label: (ctx) => `Rating: ${ctx.parsed.y.toFixed(2)} / 5.0`,
+                  label: (ctx) => {
+                    if (ctx.dataset.label === 'Average Rating') {
+                      return `Rating: ${ctx.parsed.y.toFixed(2)} / 5.0`;
+                    } else if (ctx.dataset.label === 'Rating Count') {
+                      return `Ratings: ${ctx.parsed.y.toLocaleString()}`;
+                    }
+                  },
                 },
               },
             },
@@ -568,20 +595,20 @@ History{% endblock %} {% block head_extra %}
               x: {
                 type: 'time',
                 time: {
-                  unit: isSinglePoint
-                    ? 'day'
-                    : data.labels.length > 90 // Use original labels length for unit decision
-                    ? 'month'
-                    : data.labels.length > 21
-                    ? 'week'
-                    : 'day',
-                  tooltipFormat: 'PPpp', // date-fns
+                  unit:
+                    avgData.length === 1
+                      ? 'day'
+                      : data.labels.length > 90
+                      ? 'month'
+                      : data.labels.length > 21
+                      ? 'week'
+                      : 'day',
+                  tooltipFormat: 'PPpp',
                   displayFormats: {
-                    // Corrected displayFormats structure
-                    hour: 'HH:mm', // e.g., '14:00'
-                    day: 'MMM d', // e.g., 'Sep 4'
-                    week: "MMM d ''yy", // e.g., 'Sep 4 '23'
-                    month: "MMM ''yy", // e.g., 'Sep '23'
+                    hour: 'HH:mm',
+                    day: 'MMM d',
+                    week: "MMM d ''yy",
+                    month: "MMM ''yy",
                   },
                 },
                 grid: {
@@ -611,6 +638,31 @@ History{% endblock %} {% block head_extra %}
                   stepSize: yMax - yMin <= 1.0 ? 0.2 : 0.5,
                   padding: 8,
                   callback: (value) => value.toFixed(1),
+                },
+                title: {
+                  display: true,
+                  text: 'Average Rating',
+                  color: textColorSecondary,
+                  font: { size: 11 },
+                },
+              },
+              yCount: {
+                position: 'right',
+                min: countMin,
+                max: countMax,
+                grid: { drawOnChartArea: false },
+                ticks: {
+                  color: hexToRgba(textColorSecondary, 0.5),
+                  font: { size: 10, family: 'Inter, sans-serif' },
+                  callback: (value) =>
+                    value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value,
+                  padding: 8,
+                },
+                title: {
+                  display: true,
+                  text: 'Rating Count',
+                  color: hexToRgba(textColorSecondary, 0.5),
+                  font: { size: 11 },
                 },
               },
             },

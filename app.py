@@ -9,7 +9,7 @@ from datetime import datetime
 import logging
 
 from config import Config
-from models import db, Film, RatingSnapshot
+from models import db, Film, RatingSnapshot  # Remove FilmRatingHistory
 from scraper import get_film_data
 
 
@@ -190,33 +190,23 @@ def film_detail(letterboxd_slug):
 
 @app.route('/api/film/<letterboxd_slug>/ratings')
 def api_film_ratings(letterboxd_slug):
+    # Fetch rating history for the film
     film = Film.query.filter_by(letterboxd_slug=letterboxd_slug).first_or_404()
-    ratings_data = RatingSnapshot.query.filter_by(film_id=film.id).order_by(RatingSnapshot.timestamp.asc()).all()
-    
-    labels = [r.timestamp.strftime('%Y-%m-%d %H:%M') for r in ratings_data]
-    avg_ratings = [r.average_rating for r in ratings_data]
-    rating_counts = [r.rating_count for r in ratings_data] # Add this line
-
+    # Use RatingSnapshot for history
+    history = (
+        RatingSnapshot.query
+        .filter_by(film_id=film.id)
+        .order_by(RatingSnapshot.timestamp)
+        .all()
+    )
+    labels = [h.timestamp.isoformat() for h in history]
+    avg_ratings = [h.average_rating for h in history]
+    rating_counts = [h.rating_count for h in history]
     return jsonify({
-        'labels': labels,
-        'datasets': [
-            {
-                'label': 'Average Rating',
-                'data': avg_ratings,
-                'borderColor': '#4CAF50',
-                'backgroundColor': 'rgba(76, 175, 80, 0.1)',
-                'tension': 0.1,
-                'yAxisID': 'yAverageRating'
-            },
-            {
-                'label': 'Total Ratings',
-                'data': rating_counts,
-                'borderColor': '#2196F3',
-                'backgroundColor': 'rgba(33, 150, 243, 0.1)',
-                'tension': 0.1,
-                'yAxisID': 'yRatingCount',
-                'hidden': True # Optionally hide by default
-            }
+        "labels": labels,
+        "datasets": [
+            {"label": "Average Rating", "data": avg_ratings},
+            {"label": "Rating Count", "data": rating_counts}
         ]
     })
 
