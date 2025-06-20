@@ -211,7 +211,6 @@ def api_film_ratings(letterboxd_slug):
     })
 
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() # Create tables if they don't exist (for initial run without migrations)
-    app.run(debug=True) # Debug true for development
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5050))  # Default to 5000 if not set
+    app.run(host="0.0.0.0", port=port, debug=True)
