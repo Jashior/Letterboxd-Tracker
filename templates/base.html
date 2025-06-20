@@ -12,10 +12,20 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='favicon.png') }}"
+    />
     <style>
       :root {
         --primary-bg: #0f1419;
         --secondary-bg: #1a1f26;
+        --primary-bg-rgb: 15, 20, 25; /* For #0f1419 */
+        --secondary-bg-rgb: 26, 31, 38; /* For #1a1f26 */
+        --card-bg-rgb: 36, 42, 51; /* For #242a33 */
+        --border-color-rgb: 45, 55, 72; /* For #2d3748 */
+        --accent-rgb: 0, 212, 170; /* For #00d4aa */
         --card-bg: #242a33;
         --border-color: #2d3748;
         --text-primary: #e2e8f0;
@@ -109,6 +119,10 @@
       main {
         padding-top: 2rem;
         min-height: calc(100vh - 80px);
+      }
+
+      main.container {
+        padding-top: 80px; /* Adjust as needed for your navbar height */
       }
 
       /* Cards */

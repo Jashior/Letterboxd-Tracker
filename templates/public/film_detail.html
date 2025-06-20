@@ -2,455 +2,565 @@
 History{% endblock %} {% block head_extra %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-{% endblock %} {% block content %}
-<!-- Hero Section -->
-<div class="row mb-4" style="margin-top: 80px">
-  <!-- Reduced margin-bottom -->
-  <div class="col-lg-4">
-    {% if film.poster_url %}
-    <div class="d-flex justify-content-center mb-4">
-      <div class="position-relative poster-container">
-        <img
-          src="{{ film.poster_url.replace('-0-150-0-225-crop', '-0-400-0-600-crop') }}"
-          alt="{{ film.display_name }} Poster"
-          class="img-fluid rounded-3 shadow-lg"
-        />
-        {% if film.last_known_average_rating is not none %}
-        <div class="position-absolute top-0 start-0 m-3">
-          <div class="rating-overlay">
-            <i class="fas fa-star"></i>
-            {{ '%.2f'|format(film.last_known_average_rating) }}
-          </div>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="col-lg-8">
-    <div class="film-info-container">
-      <!-- Title and Meta -->
-      <div class="mb-4">
-        <h1 class="film-title mb-3">{{ film.display_name }}</h1>
-        <div class="d-flex flex-wrap gap-2 mb-4">
-          <span class="badge bg-secondary"
-            >{{ film.year or 'Unknown Year' }}</span
-          >
-          {% if film.director %}
-          <span class="badge bg-outline-info">{{ film.director }}</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Stats Cards in 2x2 Grid -->
-      <div class="row g-3 mb-4">
-        {% if film.last_known_average_rating is not none %}
-        <div class="col-6">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <i class="fas fa-star text-warning"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">
-                {{ '%.2f'|format(film.last_known_average_rating) }}
-              </div>
-              <div class="stat-label">Average Rating</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <i class="fas fa-users text-info"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">
-                {{ '{:,}'.format(film.last_known_rating_count) }}
-              </div>
-              <div class="stat-label">Total Ratings</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="stat-card">
-            <div class="stat-icon">
-              <i class="fas fa-clock text-success"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">
-                {{ film.last_scraped_at.strftime('%b %d') if
-                film.last_scraped_at else 'N/A' }}
-              </div>
-              <div class="stat-label">Last Updated</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="stat-card action-card">
-            <div class="d-flex flex-column gap-2">
-              <a
-                href="https://letterboxd.com/film/{{ film.letterboxd_slug }}/"
-                target="_blank"
-                class="btn btn-primary btn-sm"
-              >
-                <i class="fab fa-letterboxd me-1"></i>
-                Letterboxd
-              </a>
-              <a
-                href="{{ url_for('index') }}"
-                class="btn btn-outline-secondary btn-sm"
-              >
-                <i class="fas fa-arrow-left me-1"></i>
-                Back
-              </a>
-            </div>
-          </div>
-        </div>
-        {% else %}
-        <div class="col-12">
-          <div class="card bg-warning bg-opacity-10 border-warning">
-            <div class="card-body text-center py-3">
-              <i class="fas fa-exclamation-triangle text-warning fs-3 mb-2"></i>
-              <h5 class="text-warning mb-1">No Rating Data Available</h5>
-              <p class="text-muted mb-0 small">
-                This film hasn't been scraped for rating data yet.
-              </p>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Rating Chart Section -->
-<div class="row">
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header bg-transparent border-bottom">
-        <div class="d-flex align-items-center">
-          <i class="fas fa-chart-line text-primary me-3"></i>
-          <h2 class="mb-0">Rating History Over Time</h2>
-        </div>
-      </div>
-      <div class="card-body">
-        {% if ratings %}
-        <div class="position-relative chart-container">
-          <canvas id="ratingChart"></canvas>
-        </div>
-        {% else %}
-        <div class="text-center py-5">
-          <i class="fas fa-chart-line fa-3x text-muted opacity-50 mb-3"></i>
-          <h4 class="text-muted">No Rating History Available</h4>
-          <p class="text-muted mb-0">
-            Rating data will appear here once the film has been tracked over
-            time.
-          </p>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
-
 <style>
-  /* Film detail specific styles */
-  .poster-container {
-    max-width: 280px;
-    margin: 0 auto;
+  /* Film detail specific styles - leveraging base.html variables */
+
+  .film-detail-page-content {
+    /* padding-top: 1rem; */ /* This might not be needed if main's padding is sufficient */
   }
 
-  .rating-overlay {
-    background: rgba(0, 0, 0, 0.8);
-    color: #ffd700;
-    padding: 0.5rem 1rem;
-    border-radius: 1rem;
-    font-weight: 600;
-    font-size: 0.9rem;
-    backdrop-filter: blur(10px);
+  .film-header-section {
+    margin-bottom: 2.5rem;
   }
 
-  .film-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #e2e8f0;
-    line-height: 1.2;
+  .film-title-main {
+    font-size: 2.75rem;
+    line-height: 1.15;
+    margin-bottom: 0.5rem !important;
   }
 
-  .film-info-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  /* New compact stat cards */
-  .stat-card {
-    background: linear-gradient(
-      135deg,
-      rgba(102, 126, 234, 0.1) 0%,
-      rgba(118, 75, 162, 0.1) 100%
-    );
-    border: 1px solid rgba(102, 126, 234, 0.2);
-    border-radius: 12px;
-    padding: 1.25rem;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    transition: all 0.3s ease;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  }
-
-  .stat-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-
-  .stat-content {
-    flex: 1;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #e2e8f0;
-    line-height: 1;
-    margin-bottom: 0.25rem;
-  }
-
-  .stat-label {
+  .film-meta-badges .badge {
     font-size: 0.8rem;
-    color: #a0aec0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    padding: 0.5em 0.9em;
   }
-
-  .action-card {
-    justify-content: center;
-    text-align: center;
+  .badge.bg-custom-secondary {
+    background-color: var(--secondary-bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
   }
-
-  .action-card .btn {
-    min-width: 120px;
-  }
-
-  .card-header {
-    padding: 1.5rem;
-  }
-
-  .card-body {
-    padding: 2rem;
-  }
-
-  /* Poster hover effect */
-  .img-fluid {
-    transition: all 0.3s ease;
-  }
-
-  .img-fluid:hover {
-    transform: scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
-  }
-
-  /* Badge styles */
-  .badge {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.8rem;
-    font-weight: 500;
-  }
-
-  .bg-outline-info {
+  .badge.bg-custom-outline-accent {
     background: transparent;
     border: 1px solid var(--accent-color);
     color: var(--accent-color);
   }
 
-  /* Chart container - Compact height for better viewport usage */
-  .chart-container {
-    height: 350px; /* Reduced from 500px */
-    min-height: 350px;
+  .film-action-buttons .btn {
+    font-size: 0.9rem;
+    padding: 0.6rem 1.2rem;
+  }
+  .film-action-buttons .btn i {
+    margin-right: 0.5rem;
   }
 
+  .stats-and-poster-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .poster-column .poster-container {
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto; /* Centers the poster within its column */
+  }
+  .poster-container img {
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+  }
+  .rating-overlay {
+    background: rgba(var(--primary-bg-rgb, 15, 20, 25), 0.9);
+    color: var(--accent-color);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    backdrop-filter: blur(5px);
+    border: 1px solid var(--border-color);
+  }
+
+  .stat-card {
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-left: 4px solid var(--accent-color);
+    padding-left: calc(1.5rem - 3px);
+  }
+  .stat-icon-value-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  .stat-icon {
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    width: 32px;
+    text-align: center;
+  }
+  .stat-icon.text-warning i {
+    color: var(--warning-color);
+  }
+  .stat-icon.text-info-emphasis i {
+    color: #56b6c2;
+  }
+  .stat-icon.text-success-emphasis i {
+    color: var(--success-color);
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
+    padding-left: calc(32px + 0.75rem);
+  }
+  .stat-card-empty {
+    background-color: var(--secondary-bg);
+    border: 1px dashed var(--warning-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .chart-card-container.card {
+    padding: 0;
+  }
+  .chart-card-header {
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1.25rem 1.5rem;
+  }
+  .chart-card-header .h3-custom {
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0;
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
+  }
+  .chart-card-header .h3-custom::after {
+    display: none;
+  }
+
+  .chart-card-body {
+    padding: 1.5rem;
+  }
+  .chart-container {
+    height: 380px;
+    min-height: 320px;
+  }
   #ratingChart {
     width: 100% !important;
     height: 100% !important;
   }
+  .chart-placeholder i {
+    color: var(--text-secondary);
+  }
+  .chart-placeholder h4,
+  .chart-placeholder p {
+    color: var(--text-secondary);
+  }
+
+  .chart-loading i.fa-spinner {
+    color: var(--accent-color);
+    animation: spin 1.5s linear infinite;
+  }
 
   /* Responsive adjustments */
   @media (max-width: 991px) {
-    .film-title {
-      font-size: 2rem;
+    /* lg breakpoint */
+    .film-title-main {
+      font-size: 2.25rem;
     }
+    /* 
+      MODIFIED: Removed explicit order rules for .stats-column and .poster-column.
+      The HTML source order (poster first, then stats) will now naturally dictate
+      the stacking order on smaller screens. The .poster-column uses .mb-4
+      for spacing when stacked.
+    */
+    /*
+    .stats-column {
+      order: 2;
+      margin-top: 2rem;
+    } 
+    .poster-column {
+      order: 1;
+    }
+    */
 
     .poster-container {
-      max-width: 240px;
+      /* This existing rule allows poster to be wider on mobile. */
+      max-width: 100%; /* If .poster-column .poster-container has a more specific max-width (e.g., 300px), that might still apply.
+                           Consider adjusting .poster-column .poster-container within this media query if truly 100% width is desired.
+                           For now, assuming the 300px max-width on .poster-column .poster-container is acceptable for centering. */
     }
-
-    .row:first-child {
-      margin-top: 60px !important;
-    }
-
-    .chart-container {
-      height: 300px;
-      min-height: 300px;
-    }
-
     .stat-card {
-      padding: 1rem;
+      margin-bottom: 1rem;
     }
-
-    .stat-value {
-      font-size: 1.25rem;
-    }
-  }
-
-  @media (max-width: 576px) {
-    .film-info-container {
-      text-align: center;
-      margin-top: 1rem;
-    }
-
-    .stat-card {
-      flex-direction: column;
-      text-align: center;
-      gap: 0.5rem;
-    }
-
-    .stat-icon {
-      font-size: 1.25rem;
-    }
-  }
-
-  /* Loading state for chart */
-  .chart-loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 350px; /* Match reduced chart height */
-    flex-direction: column;
-  }
-
-  .chart-loading i {
-    animation: spin 2s linear infinite;
-  }
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
+    .stat-card:last-child {
+      margin-bottom: 0;
     }
   }
 </style>
+{% endblock %} {% block content %}
+<div class="film-detail-page-content">
+  <!-- Film Header: Title, Meta, Actions -->
+  <section class="film-header-section text-center text-lg-start">
+    <h1 class="film-title-main">{{ film.display_name }}</h1>
+    <div
+      class="d-flex flex-wrap justify-content-center justify-content-lg-start align-items-center gap-2 mb-3 film-meta-badges"
+    >
+      <span class="badge bg-custom-secondary"
+        >{{ film.year or 'Unknown Year' }}</span
+      >
+      {% if film.director %}
+      <span class="badge bg-custom-outline-accent">{{ film.director }}</span>
+      {% endif %}
+    </div>
+    <div
+      class="d-flex flex-wrap justify-content-center justify-content-lg-start gap-2 film-action-buttons"
+    >
+      <a
+        href="https://letterboxd.com/film/{{ film.letterboxd_slug }}/"
+        target="_blank"
+        class="btn btn-primary"
+      >
+        <i class="fab fa-letterboxd"></i>View on Letterboxd
+      </a>
+      <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i>Back to Overview
+      </a>
+    </div>
+  </section>
+
+  <!-- Stats and Poster Section -->
+  <!-- MODIFIED: Changed row alignment and order of columns. Poster column now first. -->
+  <section class="row stats-and-poster-section align-items-start mb-4">
+    <!-- MODIFIED: Poster column is now first and uses mb-4 mb-lg-0 for spacing -->
+    <div class="col-lg-2 poster-column mb-2 mb-lg-0">
+      {% if film.poster_url %}
+      <div class="poster-container">
+        <div class="position-relative">
+          <img
+            src="{{ film.poster_url.replace('-0-150-0-225-crop', '-0-460-0-690-crop') }}"
+            alt="{{ film.display_name }} Poster"
+            class="img-fluid"
+          />
+          {% if film.last_known_average_rating is not none %}
+          <div class="position-absolute top-0 start-0 m-1">
+            <div class="rating-overlay">
+              <i class="fas fa-star"></i>
+              {{ '%.2f'|format(film.last_known_average_rating) }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div
+        class="poster-container d-flex align-items-center justify-content-center"
+        style="
+          height: 450px; /* Or adjust height as needed for placeholder */
+          background-color: var(--secondary-bg);
+          border-radius: 12px;
+        "
+      >
+        <p class="text-muted">No Poster Available</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- MODIFIED: Stats column is now second -->
+    <div class="col-lg-8 stats-column">
+      {% if film.last_known_average_rating is not none %}
+      <div class="row g-3">
+        <div class="col-md-6 col-lg-4">
+          <div class="stat-card">
+            <div class="stat-icon-value-group">
+              <div class="stat-icon text-warning">
+                <i class="fas fa-star"></i>
+              </div>
+              <div class="stat-value">
+                {{ '%.2f'|format(film.last_known_average_rating) }}
+              </div>
+            </div>
+            <div class="stat-label">Average Rating</div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="stat-card">
+            <div class="stat-icon-value-group">
+              <div class="stat-icon text-info-emphasis">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-value">
+                {{ '{:,}'.format(film.last_known_rating_count) }}
+              </div>
+            </div>
+            <div class="stat-label">Total Ratings</div>
+          </div>
+        </div>
+        <div class="col-md-12 col-lg-4">
+          {# Changed from col-md-6 to col-md-12 for better stacking on medium
+          screens before becoming col-lg-4 #}
+          <div class="stat-card">
+            <div class="stat-icon-value-group">
+              <div class="stat-icon text-success-emphasis">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-value">
+                {{ film.last_scraped_at.strftime('%b %d, %Y') if
+                film.last_scraped_at else 'N/A' }}
+              </div>
+            </div>
+            <div class="stat-label">Last Updated</div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="stat-card-empty">
+        <div class="card-body text-center py-2">
+          <i
+            class="fas fa-exclamation-triangle fa-2x mb-3"
+            style="color: var(--warning-color)"
+          ></i>
+          <h5 class="mb-1" style="color: var(--warning-color)">
+            No Rating Data Available
+          </h5>
+          <p class="text-muted mb-0">This film has no rating data yet.</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Rating Chart Section -->
+  <section class="row rating-chart-section mt-2 mb-4">
+    <div class="col-12">
+      <div class="card chart-card-container">
+        <div class="card-header chart-card-header">
+          <div class="d-flex align-items-center">
+            <i
+              class="fas fa-chart-line me-2"
+              style="color: var(--accent-color)"
+            ></i>
+            <h3 class="h3-custom">Rating History Over Time</h3>
+          </div>
+        </div>
+        <div class="card-body chart-card-body">
+          {% if ratings %}
+          <div class="position-relative chart-container">
+            <canvas id="ratingChart"></canvas>
+          </div>
+          {% else %}
+          <div class="text-center py-5 chart-placeholder">
+            <i class="fas fa-chart-line fa-3x opacity-25 mb-3"></i>
+            <h4 class="fw-normal">No Rating History Available</h4>
+            <p class="small mb-0">
+              Rating data will appear here once the film has been tracked.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
 {% endblock %} {% block scripts_extra %} {% if ratings %}
 <script>
+  // Chart.js script remains the same as in your original file
+  // ... (existing script content) ...
   document.addEventListener('DOMContentLoaded', function () {
-    // Show loading state
     const chartContainer = document.querySelector('.chart-container');
+    const canvasElement = document.getElementById('ratingChart');
+
+    if (!canvasElement) {
+      return;
+    }
+
     const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'chart-loading';
+    loadingDiv.className =
+      'chart-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
+    loadingDiv.style.backgroundColor = 'var(--card-bg)';
     loadingDiv.innerHTML = `
-    <i class="fas fa-spinner fa-2x text-primary mb-3"></i>
-    <p class="text-muted">Loading rating data...</p>
-  `;
-    chartContainer.appendChild(loadingDiv);
+          <div class="text-center">
+            <i class="fas fa-spinner fa-2x mb-2" style="color: var(--accent-color);"></i>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">Loading rating data...</p>
+          </div>
+        `;
+    canvasElement.parentNode.insertBefore(loadingDiv, canvasElement);
 
     fetch(
       "{{ url_for('api_film_ratings', letterboxd_slug=film.letterboxd_slug) }}"
     )
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then((data) => {
-        // Remove loading state
-        chartContainer.removeChild(loadingDiv);
+        if (loadingDiv) loadingDiv.remove();
 
-        const ctx = document.getElementById('ratingChart').getContext('2d');
+        if (
+          !data ||
+          !data.datasets ||
+          !data.datasets[0] ||
+          !data.datasets[0].data ||
+          data.datasets[0].data.length === 0
+        ) {
+          const noDataMessage = `<div class="text-center py-5 chart-placeholder"><i class="fas fa-chart-line fa-3x opacity-25 mb-3" style="color: var(--text-secondary);"></i><h4 class="fw-normal" style="color: var(--text-secondary);">Not Enough Rating History</h4><p class="small mb-0" style="color: var(--text-secondary);">At least one rating snapshot is needed to display the chart.</p></div>`;
+          canvasElement.parentNode.innerHTML = noDataMessage;
+          return;
+        }
 
-        // Create gradient
-        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(102, 126, 234, 0.3)');
-        gradient.addColorStop(1, 'rgba(102, 126, 234, 0.05)');
+        const ctx = canvasElement.getContext('2d');
+        const rootStyles = getComputedStyle(document.documentElement);
+        const accentColor =
+          rootStyles.getPropertyValue('--accent-color').trim() || '#667eea';
+        const textColorSecondary =
+          rootStyles.getPropertyValue('--text-secondary').trim() || '#a0aec0';
+        const gridBorderColor =
+          rootStyles.getPropertyValue('--border-color').trim() ||
+          'rgba(255,255,255,0.1)';
+        const cardBgColor =
+          rootStyles.getPropertyValue('--card-bg').trim() || '#242a33';
+        const textPrimaryColor =
+          rootStyles.getPropertyValue('--text-primary').trim() || '#e2e8f0';
 
-        // Determine if we have single or multiple data points
+        function hexToRgba(hex, alpha) {
+          let r = 0,
+            g = 0,
+            b = 0;
+          if (!hex || typeof hex !== 'string') hex = '#000000'; // Default if invalid
+          if (hex.startsWith('rgba')) return hex; // Already rgba
+          if (hex.startsWith('rgb')) {
+            // Convert rgb to rgba
+            const parts = hex.match(/[\d.]+/g);
+            if (parts && parts.length >= 3)
+              return `rgba(${parts[0]},${parts[1]},${parts[2]},${alpha})`;
+            return `rgba(0,0,0,${alpha})`; // Fallback
+          }
+          hex = hex.replace('#', '');
+          if (hex.length === 3) {
+            hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+          }
+          r = parseInt(hex.substring(0, 2), 16);
+          g = parseInt(hex.substring(2, 4), 16);
+          b = parseInt(hex.substring(4, 6), 16);
+          return `rgba(${r},${g},${b},${alpha})`;
+        }
+
+        const gradient = ctx.createLinearGradient(
+          0,
+          0,
+          0,
+          chartContainer.offsetHeight * 0.7
+        );
+        gradient.addColorStop(0, hexToRgba(accentColor, 0.35));
+        gradient.addColorStop(1, hexToRgba(accentColor, 0.05));
+
         const isSinglePoint = data.datasets[0].data.length === 1;
+
+        let yMin = 0.5;
+        let yMax = 5.0;
+        const allRatings = data.datasets[0].data
+          .filter(
+            (r) => r !== null && r !== undefined && typeof r.y === 'number' // Ensure data points are objects with y property
+          )
+          .map((r) => r.y);
+
+        if (allRatings.length > 0) {
+          const minRatingVal = Math.min(...allRatings);
+          const maxRatingVal = Math.max(...allRatings);
+          const rangeBuffer = isSinglePoint ? 0.5 : 0.2;
+          yMin = Math.max(
+            0.5,
+            parseFloat((minRatingVal - rangeBuffer).toFixed(1))
+          );
+          yMax = Math.min(
+            5.0,
+            parseFloat((maxRatingVal + rangeBuffer).toFixed(1))
+          );
+          if (yMax - yMin < 0.5) {
+            // Ensure a minimum visual range
+            const mid = (yMin + yMax) / 2;
+            yMin = Math.max(0.5, parseFloat((mid - 0.25).toFixed(1)));
+            yMax = Math.min(5.0, parseFloat((mid + 0.25).toFixed(1)));
+          }
+        }
+
+        // Transform data for Chart.js if it's not already in {x, y} format
+        const chartData = data.datasets[0].data.map((value, index) => {
+          return { x: new Date(data.labels[index]).valueOf(), y: value };
+        });
 
         new Chart(ctx, {
           type: 'line',
           data: {
-            labels: data.labels,
+            // labels: data.labels, // Not needed if x is time series
             datasets: [
               {
                 label: 'Average Rating',
-                data: data.datasets[0].data,
-                borderColor: '#667eea',
+                data: chartData, // Use transformed data
+                borderColor: accentColor,
                 backgroundColor: gradient,
-                borderWidth: 3,
+                borderWidth: 2,
                 fill: true,
-                tension: isSinglePoint ? 0 : 0.4, // No curve for single point
-                pointBackgroundColor: '#667eea',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: isSinglePoint ? 8 : 5, // Larger point for single data
-                pointHoverRadius: isSinglePoint ? 12 : 8,
-                pointHoverBackgroundColor: '#667eea',
-                pointHoverBorderColor: '#ffffff',
-                pointHoverBorderWidth: 3,
-                showLine: !isSinglePoint, // Don't show line for single point
+                tension: isSinglePoint ? 0 : 0.4,
+                pointBackgroundColor: accentColor,
+                pointBorderColor: cardBgColor,
+                pointBorderWidth: 1.5,
+                pointRadius: isSinglePoint ? 6 : 4,
+                pointHoverRadius: isSinglePoint ? 9 : 7,
+                showLine: !isSinglePoint || chartData.length > 1,
               },
             ],
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-              intersect: false,
-              mode: 'index',
-            },
+            interaction: { intersect: false, mode: 'index' },
             plugins: {
-              legend: {
-                display: false,
-              },
+              legend: { display: false },
               tooltip: {
-                backgroundColor: 'rgba(26, 31, 38, 0.95)',
-                titleColor: '#e2e8f0',
-                bodyColor: '#a0aec0',
-                borderColor: '#2d3748',
+                backgroundColor: hexToRgba(cardBgColor, 0.95),
+                titleColor: textPrimaryColor,
+                bodyColor: textColorSecondary,
+                borderColor: gridBorderColor,
                 borderWidth: 1,
                 cornerRadius: 8,
+                padding: 10,
                 displayColors: false,
                 titleFont: {
-                  size: 14,
-                  weight: '600',
-                },
-                bodyFont: {
                   size: 13,
+                  weight: '500',
+                  family: 'Inter, sans-serif',
                 },
+                bodyFont: { size: 12, family: 'Inter, sans-serif' },
+                boxPadding: 4,
                 callbacks: {
-                  title: function (context) {
-                    return new Date(context[0].label).toLocaleDateString(
+                  title: (tooltipItems) => {
+                    // Access the raw data point which includes the original label (timestamp)
+                    const originalTimestamp = tooltipItems[0].raw.x;
+                    return new Date(originalTimestamp).toLocaleDateString(
                       'en-US',
                       {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',
-                        hour: '2-digit',
+                        hour: 'numeric',
                         minute: '2-digit',
+                        hour12: true,
                       }
                     );
                   },
-                  label: function (context) {
-                    return `Rating: ${context.parsed.y.toFixed(2)} / 5.0`;
-                  },
+                  label: (ctx) => `Rating: ${ctx.parsed.y.toFixed(2)} / 5.0`,
                 },
               },
             },
@@ -458,87 +568,62 @@ History{% endblock %} {% block head_extra %}
               x: {
                 type: 'time',
                 time: {
-                  unit: isSinglePoint ? 'hour' : 'day',
-                  tooltipFormat: 'PPpp',
+                  unit: isSinglePoint
+                    ? 'day'
+                    : data.labels.length > 90 // Use original labels length for unit decision
+                    ? 'month'
+                    : data.labels.length > 21
+                    ? 'week'
+                    : 'day',
+                  tooltipFormat: 'PPpp', // date-fns
                   displayFormats: {
-                    hour: 'HH:mm',
-                    day: 'MMM d',
-                    week: 'MMM d',
-                    month: 'MMM yyyy',
+                    // Corrected displayFormats structure
+                    hour: 'HH:mm', // e.g., '14:00'
+                    day: 'MMM d', // e.g., 'Sep 4'
+                    week: "MMM d ''yy", // e.g., 'Sep 4 '23'
+                    month: "MMM ''yy", // e.g., 'Sep '23'
                   },
                 },
                 grid: {
-                  color: 'rgba(45, 55, 72, 0.3)',
+                  color: gridBorderColor,
                   drawBorder: false,
+                  lineWidth: 0.5,
                 },
                 ticks: {
-                  color: '#a0aec0',
-                  font: {
-                    size: 12,
-                  },
-                  maxTicksLimit: isSinglePoint ? 3 : undefined, // Limit ticks for single point
-                },
-                title: {
-                  display: true,
-                  text: 'Date / Time',
-                  color: '#e2e8f0',
-                  font: {
-                    size: 14,
-                    weight: '600',
-                  },
+                  color: textColorSecondary,
+                  font: { size: 10, family: 'Inter, sans-serif' },
+                  maxRotation: 0,
+                  autoSkipPadding: 20,
+                  major: { enabled: true },
                 },
               },
               y: {
-                beginAtZero: false,
-                min: Math.max(0.5, Math.min(...data.datasets[0].data) - 0.5), // Dynamic min
-                max: Math.min(5.0, Math.max(...data.datasets[0].data) + 0.5), // Dynamic max
+                min: yMin,
+                max: yMax,
                 grid: {
-                  color: 'rgba(45, 55, 72, 0.3)',
+                  color: gridBorderColor,
                   drawBorder: false,
+                  lineWidth: 0.5,
                 },
                 ticks: {
-                  color: '#a0aec0',
-                  font: {
-                    size: 12,
-                  },
-                  stepSize: 0.5, // Better step size for rating scale
-                  callback: function (value) {
-                    return value.toFixed(1);
-                  },
-                },
-                title: {
-                  display: true,
-                  text: 'Average Rating (0.5 - 5.0)',
-                  color: '#e2e8f0',
-                  font: {
-                    size: 14,
-                    weight: '600',
-                  },
+                  color: textColorSecondary,
+                  font: { size: 10, family: 'Inter, sans-serif' },
+                  stepSize: yMax - yMin <= 1.0 ? 0.2 : 0.5,
+                  padding: 8,
+                  callback: (value) => value.toFixed(1),
                 },
               },
             },
-            elements: {
-              point: {
-                hoverRadius: isSinglePoint ? 12 : 8,
-              },
-            },
-            animation: {
-              duration: 2000,
-              easing: 'easeInOutQuart',
-            },
+            elements: { line: { cubicInterpolationMode: 'monotone' } },
+            animation: { duration: 600, easing: 'easeOutCubic' },
           },
         });
       })
       .catch((error) => {
         console.error('Error loading chart data:', error);
-        chartContainer.removeChild(loadingDiv);
-        chartContainer.innerHTML = `
-        <div class="text-center py-5">
-          <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-          <h4 class="text-warning">Error Loading Chart</h4>
-          <p class="text-muted">Unable to load rating history data. Please try refreshing the page.</p>
-        </div>
-      `;
+        if (loadingDiv) loadingDiv.remove();
+        const errorMessage = `<div class="text-center py-5 chart-placeholder"><i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: var(--warning-color);"></i><h4 style="color: var(--warning-color);">Error Loading Chart</h4><p class="small mb-0" style="color: var(--text-secondary);">Unable to load rating history data. Please try refreshing.</p></div>`;
+        canvasElement.parentNode.innerHTML = errorMessage;
       });
   });
 </script>
