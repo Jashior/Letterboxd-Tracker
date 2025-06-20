@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
-  <!-- Basic dark theme with Bootstrap 5.3+ -->
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,28 +8,383 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
+      :root {
+        --primary-bg: #0f1419;
+        --secondary-bg: #1a1f26;
+        --card-bg: #242a33;
+        --border-color: #2d3748;
+        --text-primary: #e2e8f0;
+        --text-secondary: #a0aec0;
+        --accent-color: #00d4aa;
+        --accent-hover: #00b894;
+        --warning-color: #f6ad55;
+        --danger-color: #fc8181;
+        --success-color: #68d391;
+        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12),
+          0 1px 2px rgba(0, 0, 0, 0.24);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1),
+          0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
       body {
-        padding-top: 5rem;
+        background: var(--primary-bg);
+        color: var(--text-primary);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          system-ui, sans-serif;
+        line-height: 1.6;
+        overflow-x: hidden;
       }
+
+      /* Background Pattern */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            circle at 20% 20%,
+            rgba(120, 119, 198, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 80%,
+            rgba(255, 119, 198, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 40% 40%,
+            rgba(120, 219, 255, 0.1) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      /* Navbar Styling */
+      .navbar {
+        background: rgba(26, 31, 38, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        padding: 1rem 0;
+      }
+
+      .navbar-brand {
+        font-weight: 700;
+        font-size: 1.5rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .nav-link {
+        color: var(--text-secondary) !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+        padding: 0.5rem 1rem !important;
+      }
+
+      .nav-link:hover {
+        color: var(--accent-color) !important;
+        transform: translateY(-1px);
+      }
+
+      .nav-link.active {
+        color: var(--accent-color) !important;
+      }
+
+      /* Main Content */
+      main {
+        padding-top: 2rem;
+        min-height: calc(100vh - 80px);
+      }
+
+      /* Cards */
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--accent-color);
+      }
+
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card-img-top {
+        transition: transform 0.3s ease;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .card:hover .card-img-top {
+        transform: scale(1.05);
+      }
+
+      .card-body {
+        padding: 1.5rem;
+      }
+
+      .card-title {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+      }
+
+      .card-title a {
+        color: inherit;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      .card-title a:hover {
+        color: var(--accent-color);
+      }
+
+      .card-text {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .card-footer {
+        background: rgba(45, 55, 72, 0.5);
+        border-top: 1px solid var(--border-color);
+        padding: 1rem 1.5rem;
+      }
+
+      /* Buttons */
+      .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.85rem;
+      }
+
+      .btn-primary {
+        background: var(--gradient-primary);
+        border: none;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-outline-info {
+        color: var(--accent-color);
+        border-color: var(--accent-color);
+        background: transparent;
+      }
+
+      .btn-outline-info:hover {
+        background: var(--accent-color);
+        color: var(--primary-bg);
+        transform: translateY(-2px);
+      }
+
+      /* Flash Messages */
       .flash-messages .alert {
-        margin-bottom: 10px;
+        border-radius: 12px;
+        border: none;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1rem;
       }
+
+      .alert-success {
+        background: rgba(104, 211, 145, 0.1);
+        color: var(--success-color);
+        border-left: 4px solid var(--success-color);
+      }
+
+      .alert-danger {
+        background: rgba(252, 129, 129, 0.1);
+        color: var(--danger-color);
+        border-left: 4px solid var(--danger-color);
+      }
+
+      .alert-warning {
+        background: rgba(246, 173, 85, 0.1);
+        color: var(--warning-color);
+        border-left: 4px solid var(--warning-color);
+      }
+
+      /* Headings */
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      h2 {
+        font-size: 2rem;
+        position: relative;
+        padding-bottom: 0.5rem;
+      }
+
+      h2::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: var(--gradient-primary);
+        border-radius: 2px;
+      }
+
+      /* Text Styles */
+      .text-muted {
+        color: var(--text-secondary) !important;
+      }
+
+      .lead {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+      }
+
+      /* Links */
+      a {
+        color: var(--accent-color);
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      a:hover {
+        color: var(--accent-hover);
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .card-img-top {
+          height: 200px;
+          object-fit: cover;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .navbar-brand {
+          font-size: 1.25rem;
+        }
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--secondary-bg);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-color);
+      }
+
+      /* Loading animation */
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .loading {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      /* Film poster specific styles */
       .film-poster-thumb {
         max-width: 50px;
         max-height: 75px;
         margin-right: 10px;
+        border-radius: 8px;
+        box-shadow: var(--shadow-sm);
       }
-      /* Add more custom dark theme styles if needed */
+
+      /* Rating display */
+      .rating-display {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        background: rgba(0, 212, 170, 0.1);
+        border: 1px solid var(--accent-color);
+        border-radius: 20px;
+        font-weight: 600;
+        color: var(--accent-color);
+      }
+
+      .rating-count {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
     </style>
     {% block head_extra %}{% endblock %}
   </head>
   <body>
-    <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <nav class="navbar navbar-expand-md fixed-top">
       <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('index') }}"
-          >Letterboxd Tracker</a
-        >
+        <a class="navbar-brand" href="{{ url_for('index') }}">
+          <i class="fas fa-film me-2"></i>Letterboxd Tracker
+        </a>
         <button
           class="navbar-toggler"
           type="button"
@@ -45,26 +399,30 @@
         <div class="collapse navbar-collapse" id="navbarCollapse">
           <ul class="navbar-nav me-auto mb-2 mb-md-0">
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('index') }}">Home</a>
+              <a class="nav-link" href="{{ url_for('index') }}">
+                <i class="fas fa-home me-1"></i>Home
+              </a>
             </li>
             {% if session.admin_logged_in %}
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('admin_dashboard') }}"
-                >Admin</a
-              >
+              <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-cog me-1"></i>Admin
+              </a>
             </li>
             {% endif %}
           </ul>
           <ul class="navbar-nav ms-auto mb-2 mb-md-0">
             {% if session.admin_logged_in %}
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('logout') }}"
-                >Logout (Admin)</a
-              >
+              <a class="nav-link" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-1"></i>Logout
+              </a>
             </li>
             {% else %}
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('login') }}">Admin Login</a>
+              <a class="nav-link" href="{{ url_for('login') }}">
+                <i class="fas fa-user me-1"></i>Admin Login
+              </a>
             </li>
             {% endif %}
           </ul>
@@ -80,7 +438,7 @@
           class="alert alert-{{ category }} alert-dismissible fade show"
           role="alert"
         >
-          {{ message }}
+          <i class="fas fa-info-circle me-2"></i>{{ message }}
           <button
             type="button"
             class="btn-close"

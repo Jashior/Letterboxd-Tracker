@@ -3,72 +3,463 @@ History{% endblock %} {% block head_extra %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 {% endblock %} {% block content %}
-<div class="d-flex align-items-center mb-4">
-  {% if film.poster_url %}
-  <img
-    src="{{ film.poster_url.replace('-0-150-0-225-crop', '-0-230-0-345-crop') }}"
-    alt="{{ film.display_name }} Poster"
-    class="me-3"
-    style="max-width: 150px; border-radius: 5px"
-  />
-  {% endif %}
-  <div>
-    <h1>{{ film.display_name }} ({{ film.year or 'N/A' }})</h1>
-    <p class="lead">Directed by: {{ film.director or 'N/A' }}</p>
-    {% if film.last_known_average_rating is not none %}
-    <p>
-      Current Average Rating:
-      <strong>{{ '%.2f'|format(film.last_known_average_rating) }}</strong><br />
-      Total Ratings:
-      <strong>{{ '{:,}'.format(film.last_known_rating_count) }}</strong><br />
-      <small class="text-muted"
-        >Last checked: {{ film.last_scraped_at.strftime('%Y-%m-%d %H:%M') if
-        film.last_scraped_at else 'N/A' }}</small
-      >
-    </p>
-    {% else %}
-    <p>No rating data available yet.</p>
+<!-- Hero Section -->
+<div class="row mb-4" style="margin-top: 80px">
+  <!-- Reduced margin-bottom -->
+  <div class="col-lg-4">
+    {% if film.poster_url %}
+    <div class="d-flex justify-content-center mb-4">
+      <div class="position-relative poster-container">
+        <img
+          src="{{ film.poster_url.replace('-0-150-0-225-crop', '-0-400-0-600-crop') }}"
+          alt="{{ film.display_name }} Poster"
+          class="img-fluid rounded-3 shadow-lg"
+        />
+        {% if film.last_known_average_rating is not none %}
+        <div class="position-absolute top-0 start-0 m-3">
+          <div class="rating-overlay">
+            <i class="fas fa-star"></i>
+            {{ '%.2f'|format(film.last_known_average_rating) }}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
     {% endif %}
-    <p>
-      <a
-        href="https://letterboxd.com/film/{{ film.letterboxd_slug }}/"
-        target="_blank"
-        class="btn btn-outline-info btn-sm"
-        >View on Letterboxd</a
-      >
-    </p>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="film-info-container">
+      <!-- Title and Meta -->
+      <div class="mb-4">
+        <h1 class="film-title mb-3">{{ film.display_name }}</h1>
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          <span class="badge bg-secondary"
+            >{{ film.year or 'Unknown Year' }}</span
+          >
+          {% if film.director %}
+          <span class="badge bg-outline-info">{{ film.director }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stats Cards in 2x2 Grid -->
+      <div class="row g-3 mb-4">
+        {% if film.last_known_average_rating is not none %}
+        <div class="col-6">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-star text-warning"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">
+                {{ '%.2f'|format(film.last_known_average_rating) }}
+              </div>
+              <div class="stat-label">Average Rating</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-users text-info"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">
+                {{ '{:,}'.format(film.last_known_rating_count) }}
+              </div>
+              <div class="stat-label">Total Ratings</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="fas fa-clock text-success"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">
+                {{ film.last_scraped_at.strftime('%b %d') if
+                film.last_scraped_at else 'N/A' }}
+              </div>
+              <div class="stat-label">Last Updated</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="stat-card action-card">
+            <div class="d-flex flex-column gap-2">
+              <a
+                href="https://letterboxd.com/film/{{ film.letterboxd_slug }}/"
+                target="_blank"
+                class="btn btn-primary btn-sm"
+              >
+                <i class="fab fa-letterboxd me-1"></i>
+                Letterboxd
+              </a>
+              <a
+                href="{{ url_for('index') }}"
+                class="btn btn-outline-secondary btn-sm"
+              >
+                <i class="fas fa-arrow-left me-1"></i>
+                Back
+              </a>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+          <div class="card bg-warning bg-opacity-10 border-warning">
+            <div class="card-body text-center py-3">
+              <i class="fas fa-exclamation-triangle text-warning fs-3 mb-2"></i>
+              <h5 class="text-warning mb-1">No Rating Data Available</h5>
+              <p class="text-muted mb-0 small">
+                This film hasn't been scraped for rating data yet.
+              </p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 
-<h2 class="mt-5">Rating Over Time</h2>
-{% if ratings %}
-<canvas id="ratingChart" width="400" height="150"></canvas>
-{% else %}
-<p>No rating history available for this film yet.</p>
-{% endif %} {% endblock %} {% block scripts_extra %} {% if ratings %}
+<!-- Rating Chart Section -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-transparent border-bottom">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-chart-line text-primary me-3"></i>
+          <h2 class="mb-0">Rating History Over Time</h2>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if ratings %}
+        <div class="position-relative chart-container">
+          <canvas id="ratingChart"></canvas>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-chart-line fa-3x text-muted opacity-50 mb-3"></i>
+          <h4 class="text-muted">No Rating History Available</h4>
+          <p class="text-muted mb-0">
+            Rating data will appear here once the film has been tracked over
+            time.
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Film detail specific styles */
+  .poster-container {
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  .rating-overlay {
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffd700;
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    backdrop-filter: blur(10px);
+  }
+
+  .film-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    line-height: 1.2;
+  }
+
+  .film-info-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* New compact stat cards */
+  .stat-card {
+    background: linear-gradient(
+      135deg,
+      rgba(102, 126, 234, 0.1) 0%,
+      rgba(118, 75, 162, 0.1) 100%
+    );
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    padding: 1.25rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  .stat-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  .stat-content {
+    flex: 1;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .action-card {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .action-card .btn {
+    min-width: 120px;
+  }
+
+  .card-header {
+    padding: 1.5rem;
+  }
+
+  .card-body {
+    padding: 2rem;
+  }
+
+  /* Poster hover effect */
+  .img-fluid {
+    transition: all 0.3s ease;
+  }
+
+  .img-fluid:hover {
+    transform: scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Badge styles */
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    font-weight: 500;
+  }
+
+  .bg-outline-info {
+    background: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+  }
+
+  /* Chart container - Compact height for better viewport usage */
+  .chart-container {
+    height: 350px; /* Reduced from 500px */
+    min-height: 350px;
+  }
+
+  #ratingChart {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 991px) {
+    .film-title {
+      font-size: 2rem;
+    }
+
+    .poster-container {
+      max-width: 240px;
+    }
+
+    .row:first-child {
+      margin-top: 60px !important;
+    }
+
+    .chart-container {
+      height: 300px;
+      min-height: 300px;
+    }
+
+    .stat-card {
+      padding: 1rem;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .film-info-container {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .stat-card {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.5rem;
+    }
+
+    .stat-icon {
+      font-size: 1.25rem;
+    }
+  }
+
+  /* Loading state for chart */
+  .chart-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 350px; /* Match reduced chart height */
+    flex-direction: column;
+  }
+
+  .chart-loading i {
+    animation: spin 2s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+</style>
+{% endblock %} {% block scripts_extra %} {% if ratings %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Show loading state
+    const chartContainer = document.querySelector('.chart-container');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'chart-loading';
+    loadingDiv.innerHTML = `
+    <i class="fas fa-spinner fa-2x text-primary mb-3"></i>
+    <p class="text-muted">Loading rating data...</p>
+  `;
+    chartContainer.appendChild(loadingDiv);
+
     fetch(
       "{{ url_for('api_film_ratings', letterboxd_slug=film.letterboxd_slug) }}"
     )
       .then((response) => response.json())
       .then((data) => {
+        // Remove loading state
+        chartContainer.removeChild(loadingDiv);
+
         const ctx = document.getElementById('ratingChart').getContext('2d');
+
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(102, 126, 234, 0.3)');
+        gradient.addColorStop(1, 'rgba(102, 126, 234, 0.05)');
+
+        // Determine if we have single or multiple data points
+        const isSinglePoint = data.datasets[0].data.length === 1;
+
         new Chart(ctx, {
           type: 'line',
           data: {
-            labels: data.labels, // These are timestamps
-            datasets: data.datasets,
+            labels: data.labels,
+            datasets: [
+              {
+                label: 'Average Rating',
+                data: data.datasets[0].data,
+                borderColor: '#667eea',
+                backgroundColor: gradient,
+                borderWidth: 3,
+                fill: true,
+                tension: isSinglePoint ? 0 : 0.4, // No curve for single point
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: isSinglePoint ? 8 : 5, // Larger point for single data
+                pointHoverRadius: isSinglePoint ? 12 : 8,
+                pointHoverBackgroundColor: '#667eea',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3,
+                showLine: !isSinglePoint, // Don't show line for single point
+              },
+            ],
           },
           options: {
             responsive: true,
-            maintainAspectRatio: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index',
+            },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              tooltip: {
+                backgroundColor: 'rgba(26, 31, 38, 0.95)',
+                titleColor: '#e2e8f0',
+                bodyColor: '#a0aec0',
+                borderColor: '#2d3748',
+                borderWidth: 1,
+                cornerRadius: 8,
+                displayColors: false,
+                titleFont: {
+                  size: 14,
+                  weight: '600',
+                },
+                bodyFont: {
+                  size: 13,
+                },
+                callbacks: {
+                  title: function (context) {
+                    return new Date(context[0].label).toLocaleDateString(
+                      'en-US',
+                      {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }
+                    );
+                  },
+                  label: function (context) {
+                    return `Rating: ${context.parsed.y.toFixed(2)} / 5.0`;
+                  },
+                },
+              },
+            },
             scales: {
               x: {
                 type: 'time',
                 time: {
-                  unit: 'day', // Adjust as needed: 'hour', 'day', 'week', 'month'
-                  tooltipFormat: 'PPpp', // Date-fns format for "Jan 1, 2023, 12:00:00 PM"
+                  unit: isSinglePoint ? 'hour' : 'day',
+                  tooltipFormat: 'PPpp',
                   displayFormats: {
                     hour: 'HH:mm',
                     day: 'MMM d',
@@ -76,43 +467,78 @@ History{% endblock %} {% block head_extra %}
                     month: 'MMM yyyy',
                   },
                 },
+                grid: {
+                  color: 'rgba(45, 55, 72, 0.3)',
+                  drawBorder: false,
+                },
+                ticks: {
+                  color: '#a0aec0',
+                  font: {
+                    size: 12,
+                  },
+                  maxTicksLimit: isSinglePoint ? 3 : undefined, // Limit ticks for single point
+                },
                 title: {
                   display: true,
                   text: 'Date / Time',
+                  color: '#e2e8f0',
+                  font: {
+                    size: 14,
+                    weight: '600',
+                  },
                 },
               },
-              yAverageRating: {
-                // ID must match dataset's yAxisID
-                beginAtZero: false, // Ratings don't start at 0
-                min: 0.5, // Film ratings are typically 0.5-5
-                max: 5.0,
-                position: 'left',
+              y: {
+                beginAtZero: false,
+                min: Math.max(0.5, Math.min(...data.datasets[0].data) - 0.5), // Dynamic min
+                max: Math.min(5.0, Math.max(...data.datasets[0].data) + 0.5), // Dynamic max
+                grid: {
+                  color: 'rgba(45, 55, 72, 0.3)',
+                  drawBorder: false,
+                },
+                ticks: {
+                  color: '#a0aec0',
+                  font: {
+                    size: 12,
+                  },
+                  stepSize: 0.5, // Better step size for rating scale
+                  callback: function (value) {
+                    return value.toFixed(1);
+                  },
+                },
                 title: {
                   display: true,
                   text: 'Average Rating (0.5 - 5.0)',
+                  color: '#e2e8f0',
+                  font: {
+                    size: 14,
+                    weight: '600',
+                  },
                 },
               },
-              // Example for a second Y-axis if you add rating_count dataset
-              // yRatingCount: {
-              //   beginAtZero: true,
-              //   position: 'right',
-              //   title: {
-              //     display: true,
-              //     text: 'Total Ratings'
-              //   },
-              //   grid: {
-              //     drawOnChartArea: false, // only want the grid lines for one axis to show up
-              //   },
-              // }
             },
-            plugins: {
-              tooltip: {
-                mode: 'index',
-                intersect: false,
+            elements: {
+              point: {
+                hoverRadius: isSinglePoint ? 12 : 8,
               },
+            },
+            animation: {
+              duration: 2000,
+              easing: 'easeInOutQuart',
             },
           },
         });
+      })
+      .catch((error) => {
+        console.error('Error loading chart data:', error);
+        chartContainer.removeChild(loadingDiv);
+        chartContainer.innerHTML = `
+        <div class="text-center py-5">
+          <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+          <h4 class="text-warning">Error Loading Chart</h4>
+          <p class="text-muted">Unable to load rating history data. Please try refreshing the page.</p>
+        </div>
+      `;
       });
   });
 </script>

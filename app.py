@@ -193,10 +193,9 @@ def api_film_ratings(letterboxd_slug):
     film = Film.query.filter_by(letterboxd_slug=letterboxd_slug).first_or_404()
     ratings_data = RatingSnapshot.query.filter_by(film_id=film.id).order_by(RatingSnapshot.timestamp.asc()).all()
     
-    # Format for Chart.js
     labels = [r.timestamp.strftime('%Y-%m-%d %H:%M') for r in ratings_data]
     avg_ratings = [r.average_rating for r in ratings_data]
-    # rating_counts = [r.rating_count for r in ratings_data] # Could add a second Y-axis for this
+    rating_counts = [r.rating_count for r in ratings_data] # Add this line
 
     return jsonify({
         'labels': labels,
@@ -204,21 +203,20 @@ def api_film_ratings(letterboxd_slug):
             {
                 'label': 'Average Rating',
                 'data': avg_ratings,
-                'borderColor': '#4CAF50', # A green color
+                'borderColor': '#4CAF50',
                 'backgroundColor': 'rgba(76, 175, 80, 0.1)',
                 'tension': 0.1,
                 'yAxisID': 'yAverageRating'
+            },
+            {
+                'label': 'Total Ratings',
+                'data': rating_counts,
+                'borderColor': '#2196F3',
+                'backgroundColor': 'rgba(33, 150, 243, 0.1)',
+                'tension': 0.1,
+                'yAxisID': 'yRatingCount',
+                'hidden': True # Optionally hide by default
             }
-            # Example for second dataset if you want to show rating counts
-            # {
-            #     'label': 'Total Ratings',
-            #     'data': rating_counts,
-            #     'borderColor': '#2196F3', # A blue color
-            #     'backgroundColor': 'rgba(33, 150, 243, 0.1)',
-            #     'tension': 0.1,
-            #     'yAxisID': 'yRatingCount',
-            #     'hidden': True # Optionally hide by default
-            # }
         ]
     })
 
