@@ -1,0 +1,53 @@
+{% extends "base.html" %} {% block title %}Tracked Films{% endblock %} {% block
+content %}
+<h1 class="mb-4">Tracked Films</h1>
+{% if films %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+  {% for film in films %}
+  <div class="col">
+    <div class="card h-100">
+      {% if film.poster_url %}
+      <a
+        href="{{ url_for('film_detail', letterboxd_slug=film.letterboxd_slug) }}"
+      >
+        <img
+          src="{{ film.poster_url.replace('-0-150-0-225-crop', '-0-230-0-345-crop') }}"
+          class="card-img-top"
+          alt="{{ film.display_name }} Poster"
+        />
+        {# Request slightly larger poster #}
+      </a>
+      {% endif %}
+      <div class="card-body">
+        <h5 class="card-title">
+          <a
+            href="{{ url_for('film_detail', letterboxd_slug=film.letterboxd_slug) }}"
+            >{{ film.display_name }}</a
+          >
+          ({{ film.year or 'N/A' }})
+        </h5>
+        <p class="card-text">
+          <small class="text-muted"
+            >Directed by: {{ film.director or 'N/A' }}</small
+          ><br />
+          {% if film.last_known_average_rating is not none %} Current Avg:
+          <strong>{{ '%.2f'|format(film.last_known_average_rating) }}</strong>
+          based on {{ '{:,}'.format(film.last_known_rating_count) }} ratings. {%
+          else %} No rating data available yet. {% endif %}
+        </p>
+      </div>
+      <div class="card-footer">
+        <small class="text-muted"
+          >Last updated: {{ film.last_scraped_at.strftime('%Y-%m-%d %H:%M') if
+          film.last_scraped_at else 'Never' }}</small
+        >
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="lead">
+  No films are currently being displayed. An admin needs to add them.
+</p>
+{% endif %} {% endblock %}

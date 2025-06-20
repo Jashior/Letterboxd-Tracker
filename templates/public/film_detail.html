@@ -1,0 +1,119 @@
+{% extends "base.html" %} {% block title %}{{ film.display_name }} - Rating
+History{% endblock %} {% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+{% endblock %} {% block content %}
+<div class="d-flex align-items-center mb-4">
+  {% if film.poster_url %}
+  <img
+    src="{{ film.poster_url.replace('-0-150-0-225-crop', '-0-230-0-345-crop') }}"
+    alt="{{ film.display_name }} Poster"
+    class="me-3"
+    style="max-width: 150px; border-radius: 5px"
+  />
+  {% endif %}
+  <div>
+    <h1>{{ film.display_name }} ({{ film.year or 'N/A' }})</h1>
+    <p class="lead">Directed by: {{ film.director or 'N/A' }}</p>
+    {% if film.last_known_average_rating is not none %}
+    <p>
+      Current Average Rating:
+      <strong>{{ '%.2f'|format(film.last_known_average_rating) }}</strong><br />
+      Total Ratings:
+      <strong>{{ '{:,}'.format(film.last_known_rating_count) }}</strong><br />
+      <small class="text-muted"
+        >Last checked: {{ film.last_scraped_at.strftime('%Y-%m-%d %H:%M') if
+        film.last_scraped_at else 'N/A' }}</small
+      >
+    </p>
+    {% else %}
+    <p>No rating data available yet.</p>
+    {% endif %}
+    <p>
+      <a
+        href="https://letterboxd.com/film/{{ film.letterboxd_slug }}/"
+        target="_blank"
+        class="btn btn-outline-info btn-sm"
+        >View on Letterboxd</a
+      >
+    </p>
+  </div>
+</div>
+
+<h2 class="mt-5">Rating Over Time</h2>
+{% if ratings %}
+<canvas id="ratingChart" width="400" height="150"></canvas>
+{% else %}
+<p>No rating history available for this film yet.</p>
+{% endif %} {% endblock %} {% block scripts_extra %} {% if ratings %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    fetch(
+      "{{ url_for('api_film_ratings', letterboxd_slug=film.letterboxd_slug) }}"
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        const ctx = document.getElementById('ratingChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.labels, // These are timestamps
+            datasets: data.datasets,
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              x: {
+                type: 'time',
+                time: {
+                  unit: 'day', // Adjust as needed: 'hour', 'day', 'week', 'month'
+                  tooltipFormat: 'PPpp', // Date-fns format for "Jan 1, 2023, 12:00:00 PM"
+                  displayFormats: {
+                    hour: 'HH:mm',
+                    day: 'MMM d',
+                    week: 'MMM d',
+                    month: 'MMM yyyy',
+                  },
+                },
+                title: {
+                  display: true,
+                  text: 'Date / Time',
+                },
+              },
+              yAverageRating: {
+                // ID must match dataset's yAxisID
+                beginAtZero: false, // Ratings don't start at 0
+                min: 0.5, // Film ratings are typically 0.5-5
+                max: 5.0,
+                position: 'left',
+                title: {
+                  display: true,
+                  text: 'Average Rating (0.5 - 5.0)',
+                },
+              },
+              // Example for a second Y-axis if you add rating_count dataset
+              // yRatingCount: {
+              //   beginAtZero: true,
+              //   position: 'right',
+              //   title: {
+              //     display: true,
+              //     text: 'Total Ratings'
+              //   },
+              //   grid: {
+              //     drawOnChartArea: false, // only want the grid lines for one axis to show up
+              //   },
+              // }
+            },
+            plugins: {
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+              },
+            },
+          },
+        });
+      });
+  });
+</script>
+{% endif %} {% endblock %}

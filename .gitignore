@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+instance/ # Flask specific, often for SQLite DB
+*.sqlite3
+*.db

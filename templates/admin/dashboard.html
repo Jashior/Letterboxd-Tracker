@@ -1,0 +1,115 @@
+{% extends "base.html" %} {% block title %}Admin Dashboard - Letterboxd
+Tracker{% endblock %} {% block content %}
+<h1 class="mb-4">Admin Dashboard</h1>
+
+<h2 class="mt-5">Add New Film</h2>
+<form method="POST" action="{{ url_for('add_film') }}" class="mb-4">
+  <div class="input-group">
+    <input
+      type="url"
+      class="form-control"
+      name="letterboxd_url"
+      placeholder="e.g., https://letterboxd.com/film/your-film-slug/"
+      required
+    />
+    <button class="btn btn-success" type="submit">Add Film</button>
+  </div>
+</form>
+
+<h2 class="mt-5">Tracked Films</h2>
+{% if films %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead>
+      <tr>
+        <th>Poster</th>
+        <th>Display Name (Year)</th>
+        <th>Slug</th>
+        <th>Director</th>
+        <th>Tracked</th>
+        <th>Last Scraped</th>
+        <th>Last Avg. Rating</th>
+        <th>Last Rating Count</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for film in films %}
+      <tr>
+        <td>
+          {% if film.poster_url %}
+          <img
+            src="{{ film.poster_url }}"
+            alt="{{ film.display_name }} poster"
+            class="film-poster-thumb img-thumbnail"
+          />
+          {% else %}
+          <span class="text-muted">No Poster</span>
+          {% endif %}
+        </td>
+        <td>
+          <a
+            href="{{ url_for('film_detail', letterboxd_slug=film.letterboxd_slug) }}"
+            >{{ film.display_name }}</a
+          >
+          ({{ film.year or 'N/A' }})
+        </td>
+        <td>{{ film.letterboxd_slug }}</td>
+        <td>{{ film.director or 'N/A' }}</td>
+        <td>
+          <form
+            method="POST"
+            action="{{ url_for('toggle_tracking', film_id=film.id) }}"
+            style="display: inline"
+          >
+            <button
+              type="submit"
+              class="btn btn-sm {{ 'btn-warning' if film.is_tracked else 'btn-info' }}"
+            >
+              {{ 'Stop Tracking' if film.is_tracked else 'Start Tracking' }}
+            </button>
+          </form>
+        </td>
+        <td>
+          {{ film.last_scraped_at.strftime('%Y-%m-%d %H:%M') if
+          film.last_scraped_at else 'Never' }}
+        </td>
+        <td>
+          {{ '%.2f'|format(film.last_known_average_rating) if
+          film.last_known_average_rating is not none else 'N/A' }}
+        </td>
+        <td>
+          {{ '{:,}'.format(film.last_known_rating_count) if
+          film.last_known_rating_count is not none else 'N/A' }}
+        </td>
+        <td>
+          <form
+            method="POST"
+            action="{{ url_for('scrape_now_film', film_id=film.id) }}"
+            style="display: inline"
+          >
+            <button
+              type="submit"
+              class="btn btn-sm btn-secondary"
+              title="Scrape Now"
+            >
+              Scrape
+            </button>
+          </form>
+          <form
+            method="POST"
+            action="{{ url_for('delete_film', film_id=film.id) }}"
+            onsubmit="return confirm('Are you sure you want to delete {{ film.display_name }} and all its data?');"
+            style="display: inline"
+          >
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p>No films are being tracked yet. Add one above!</p>
+{% endif %} {% endblock %}
