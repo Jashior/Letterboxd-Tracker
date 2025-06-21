@@ -78,7 +78,9 @@ def logout():
 @login_required
 def admin_dashboard():
     films = Film.query.order_by(Film.display_name).all()
-    return render_template('admin/dashboard.html', films=films)
+    job = scheduler.get_job(SCRAPE_JOB_ID)
+    next_run_time = job.next_run_time if job else None
+    return render_template('admin/dashboard.html', films=films, next_run_time=next_run_time)
 
 @app.route('/admin/add_film', methods=['POST'])
 @login_required

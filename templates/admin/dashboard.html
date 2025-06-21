@@ -16,7 +16,16 @@ Tracker{% endblock %} {% block content %}
   </div>
 </form>
 
-<h2 class="mt-5">Tracked Films</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mt-5 mb-0">Tracked Films</h2>
+  {% if next_run_time %}
+  <p class="text-muted mb-0">
+    Next scheduled scrape: {{ next_run_time.strftime('%Y-%m-%d %H:%M %Z') }}
+  </p>
+  {% else %}
+  <p class="text-muted mb-0">Scheduler not running or job not found.</p>
+  {% endif %}
+</div>
 {% if films %}
 <div class="table-responsive">
   <table class="table table-striped table-hover">
