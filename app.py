@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from werkzeug.security import check_password_hash, generate_password_hash # For password hashing
 from functools import wraps
 import re
+import sys
 from datetime import datetime
 import logging
 
@@ -34,8 +35,11 @@ os.makedirs(app.instance_path, exist_ok=True)
 db.init_app(app)
 migrate = Migrate(app, db) # Initialize Flask-Migrate
 
-# Initialize and start the scheduler if enabled in config
-if app.config.get('SCHEDULER_API_ENABLED'):
+# Initialize and start the scheduler if enabled in config.
+# We add a check to prevent starting the scheduler during 'flask db' commands.
+is_running_db_command = len(sys.argv) > 1 and sys.argv[1] == 'db'
+
+if app.config.get('SCHEDULER_API_ENABLED') and not is_running_db_command:
     init_scheduler(app) # This function now handles the scheduler's lifecycle
 
 # --- Admin Authentication ---
