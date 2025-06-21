@@ -11,6 +11,8 @@ import logging
 from config import Config
 from models import db, Film, RatingSnapshot  # Remove FilmRatingHistory
 from scraper import get_film_data
+from tasks import run_scrape_job_for_film  # Import from new tasks.py
+from scheduler import init_scheduler, scheduler, SCRAPE_JOB_ID  # Import the initializer and scheduler instance
 
 
 # Configure logging
@@ -31,6 +33,10 @@ os.makedirs(app.instance_path, exist_ok=True)
  
 db.init_app(app)
 migrate = Migrate(app, db) # Initialize Flask-Migrate
+
+# Initialize and start the scheduler if enabled in config
+if app.config.get('SCHEDULER_API_ENABLED'):
+    init_scheduler(app) # This function now handles the scheduler's lifecycle
 
 # --- Admin Authentication ---
 def login_required(f):
@@ -166,14 +172,33 @@ def delete_film(film_id):
 def scrape_now_film(film_id):
     film = Film.query.get_or_404(film_id)
     logger.info(f"Manual scrape initiated for {film.display_name}")
-    # Call the actual scraping logic (you'll define this for the scheduler too)
-    from scheduler import run_scrape_job_for_film # We'll create this function
+    # Call the scraping logic from our tasks file
     success = run_scrape_job_for_film(film.id) # Pass film_id
     if success:
         flash(f'Successfully scraped new data for "{film.display_name}".', 'success')
     else:
         flash(f'Failed to scrape new data for "{film.display_name}". Check logs.', 'warning')
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/scheduler_status')
+@login_required
+def scheduler_status():
+    """An endpoint to check the status of the background scheduler job."""
+    job = scheduler.get_job(SCRAPE_JOB_ID)
+    status_data = {
+        "scheduler_running": scheduler.running
+    }
+    if job:
+        status_data["job_found"] = True
+        status_data["job_id"] = job.id
+        status_data["next_run"] = job.next_run_time.isoformat() if job.next_run_time else "N/A"
+    else:
+        status_data["job_found"] = False
+        status_data["job_id"] = SCRAPE_JOB_ID
+        status_data["error"] = "Job not found. It may not have been scheduled correctly."
+
+    # Using jsonify will correctly set the Content-Type header to application/json
+    return jsonify(status_data)
 
 
 # --- Public Routes ---
