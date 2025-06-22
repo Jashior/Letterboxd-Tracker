@@ -61,18 +61,31 @@ def run_scrape_job_for_film(film_id):
         return False
 
 def scheduled_scrape_task():
-    """The main scheduled task that iterates through all tracked films."""
-    # This function is run by APScheduler and will have an app context automatically.
     print(">>> SCHEDULED TASK TRIGGERED <<<")
+    import sys; sys.stdout.flush()
     logger.info("Scheduler starting scrape task...")
+    # This function is run by APScheduler and will have an app context automatically.
+    print("\n" + "="*60)
+    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("="*60)
     films_to_track = Film.query.filter_by(is_tracked=True).all()
     if not films_to_track:
         logger.info("No films are currently marked for tracking.")
+        print("No films to track!")
         return
 
+    print(f"Found {len(films_to_track)} films to scrape:")
     for film in films_to_track:
+        print(f"  - {film.display_name}")
+    
+    for film in films_to_track:
+        print(f"\nScraping: {film.display_name}")
         run_scrape_job_for_film(film.id)
         delay = randint(5, 15) # Polite delay between requests
         logger.info(f"Waiting {delay} seconds before next film...")
+        print(f"Waiting {delay} seconds...")
         time.sleep(delay)
     logger.info("Scheduler finished scrape task.")
+    print("="*60)
+    print(">>> SCHEDULED TASK COMPLETED <<<")
+    print("="*60 + "\n")
