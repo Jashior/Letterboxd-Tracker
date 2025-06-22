@@ -23,7 +23,12 @@ Tracker{% endblock %} {% block content %}
     Next scheduled scrape: {{ next_run_time.strftime('%Y-%m-%d %H:%M %Z') }}
   </p>
   {% else %}
-  <p class="text-muted mb-0">Scheduler not running or job not found.</p>
+  <p class="text-muted mb-0">
+    Scheduler is running in a separate process.<br />
+    Check
+    <code>sudo journalctl -u letterboxd-tracker-scheduler.service -f</code> for
+    next run time.
+  </p>
   {% endif %}
 </div>
 {% if films %}
