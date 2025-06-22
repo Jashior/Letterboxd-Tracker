@@ -1,16 +1,8 @@
 {% extends "base.html" %} {% block title %}Tracked Films{% endblock %} {% block
 content %}
-<div class="d-flex justify-content-between align-items-center mb-5 pt-4">
+<!-- <div class="d-flex justify-content-between align-items-center mb-5 pt-4">
   <h1 class="mb-0"><i class="fas fa-star me-3"></i>Tracked Films</h1>
-  {% if films_with_data or films_without_data %}
-  <div class="text-muted">
-    <i class="fas fa-film me-1"></i>{{ (films_with_data|length) +
-    (films_without_data|length) }} film{{ 's' if (films_with_data|length) +
-    (films_without_data|length) != 1 else '' }} tracked
-  </div>
-  {% endif %}
-</div>
-
+</div> -->
 {% macro film_card(film) %}
 <div class="col">
   <div class="card h-100">
@@ -95,24 +87,77 @@ content %}
     </div>
   </div>
 </div>
-{% endmacro %} {% if films_with_data %}
-<div
-  class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
-  id="films-with-data"
->
-  {% for film in films_with_data %} {{ film_card(film) }} {% endfor %}
-</div>
-{% endif %} {% if films_without_data %}
-<div class="d-flex align-items-center mt-5 mb-4">
-  <h2 class="mb-0 h3">Upcoming or Awaiting Data</h2>
-</div>
-<div
-  class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
-  id="films-without-data"
->
-  {% for film in films_without_data %} {{ film_card(film) }} {% endfor %}
+{% endmacro %}
+
+<!-- TRACKED FILMS -->
+{% if films_with_data %}
+<div class="mb-4">
+  <button
+    class="btn btn-link text-decoration-none"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#tracked-films"
+    aria-expanded="true"
+  >
+    <h2 class="h3 mb-0">Tracked Films</h2>
+  </button>
+  <div class="collapse show" id="tracked-films">
+    <div
+      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
+      id="films-with-data"
+    >
+      {% for film in films_with_data %} {{ film_card(film) }} {% endfor %}
+    </div>
+  </div>
 </div>
 {% endif %}
+
+<!-- UPCOMING OR AWAITING DATA -->
+{% if films_without_data %}
+<div class="mb-4">
+  <button
+    class="btn btn-link text-decoration-none"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#upcoming-films"
+    aria-expanded="true"
+  >
+    <h2 class="h3 mb-0">Upcoming or Awaiting Data</h2>
+  </button>
+  <div class="collapse show" id="upcoming-films">
+    <div
+      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
+      id="films-without-data"
+    >
+      {% for film in films_without_data %} {{ film_card(film) }} {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ARCHIVE -->
+{% if films_archived %}
+<div class="mb-4">
+  <button
+    class="btn btn-link text-decoration-none"
+    type="button"
+    data-bs-toggle="collapse"
+    data-bs-target="#archived-films"
+    aria-expanded="false"
+  >
+    <h2 class="h3 mb-0">Archive</h2>
+  </button>
+  <div class="collapse" id="archived-films">
+    <div
+      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
+      id="films-archived"
+    >
+      {% for film in films_archived %} {{ film_card(film) }} {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- Empty state -->
 {% if not films_with_data and not films_without_data %}
 <div class="text-center py-5">

@@ -20,7 +20,8 @@ def init_scheduler(app):
 
         # Check if job already exists to prevent duplicates on app restart
         if not scheduler.get_job(SCRAPE_JOB_ID):
-            interval_minutes = app.config.get('SCHEDULER_INTERVAL_MINUTES', 60)
+            interval_minutes = int(app.config.get('SCHEDULER_INTERVAL_MINUTES', 60))
+            logger.info(f"DEBUG: interval_minutes = {interval_minutes} (type: {type(interval_minutes)})")
             job = scheduler.add_job(
                 id=SCRAPE_JOB_ID,
                 func=scheduled_scrape_task,

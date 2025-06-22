@@ -203,6 +203,39 @@ def move_film(film_id, direction):
     
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/film/move_to_top/<int:film_id>', methods=['POST'])
+@login_required
+def move_film_to_top(film_id):
+    film = Film.query.get_or_404(film_id)
+    # Only consider films in the same group (tracked/archived)
+    group_filter = Film.is_tracked == film.is_tracked
+    films_in_group = Film.query.filter(group_filter).order_by(Film.display_order.asc()).all()
+    if films_in_group and films_in_group[0].id != film.id:
+        # Move this film to the top
+        for idx, f in enumerate(films_in_group):
+            if f.id == film.id:
+                continue
+            f.display_order = idx + 2  # Shift down
+        film.display_order = 1
+        db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/film/move_to_bottom/<int:film_id>', methods=['POST'])
+@login_required
+def move_film_to_bottom(film_id):
+    film = Film.query.get_or_404(film_id)
+    group_filter = Film.is_tracked == film.is_tracked
+    films_in_group = Film.query.filter(group_filter).order_by(Film.display_order.asc()).all()
+    if films_in_group and films_in_group[-1].id != film.id:
+        # Move this film to the bottom
+        for idx, f in enumerate(films_in_group):
+            if f.id == film.id:
+                continue
+            f.display_order = idx + 1
+        film.display_order = len(films_in_group)
+        db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
 # Only register the scheduler status route if NOT running in the scheduler process
 import os
 
@@ -255,9 +288,15 @@ def reorder_films_command():
 @app.route('/')
 def index():
     all_films = Film.query.order_by(Film.display_order.asc()).all()
-    films_with_data = [f for f in all_films if f.last_known_average_rating is not None]
-    films_without_data = [f for f in all_films if f.last_known_average_rating is None]
-    return render_template('public/index.html', films_with_data=films_with_data, films_without_data=films_without_data)
+    films_with_data = [f for f in all_films if f.is_tracked and f.last_known_average_rating is not None]
+    films_without_data = [f for f in all_films if f.is_tracked and f.last_known_average_rating is None]
+    films_archived = [f for f in all_films if not f.is_tracked]
+    return render_template(
+        'public/index.html',
+        films_with_data=films_with_data,
+        films_without_data=films_without_data,
+        films_archived=films_archived
+    )
 
 @app.route('/film/<letterboxd_slug>')
 def film_detail(letterboxd_slug):

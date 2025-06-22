@@ -63,6 +63,7 @@ def run_scrape_job_for_film(film_id):
 def scheduled_scrape_task():
     """The main scheduled task that iterates through all tracked films."""
     # This function is run by APScheduler and will have an app context automatically.
+    print(">>> SCHEDULED TASK TRIGGERED <<<")
     logger.info("Scheduler starting scrape task...")
     films_to_track = Film.query.filter_by(is_tracked=True).all()
     if not films_to_track:
