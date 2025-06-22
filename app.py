@@ -228,6 +228,29 @@ if not os.environ.get("RUNNING_SCHEDULER_PROCESS"):
         return jsonify(status_data)
 
 
+# --- CLI Commands for data maintenance ---
+@app.cli.command("reorder-films")
+def reorder_films_command():
+    """Resets the display_order for all films based on their addition date."""
+    with app.app_context():
+        # Order by existing display_order first, then by when they were added.
+        # This preserves any manual ordering that might already exist for some films.
+        films = Film.query.order_by(Film.display_order.asc(), Film.added_at.asc()).all()
+        if not films:
+            print("No films found in the database.")
+            return
+
+        print(f"Re-ordering {len(films)} films...")
+        for index, film in enumerate(films):
+            film.display_order = index + 1
+        
+        try:
+            db.session.commit()
+            print("Successfully updated display order for all films.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"An error occurred during re-ordering: {e}")
+
 # --- Public Routes ---
 @app.route('/')
 def index():
