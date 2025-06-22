@@ -69,7 +69,11 @@ These instructions assume a Linux server (e.g., Ubuntu on Hetzner) with `python3
 
 Follow the "Local Development Setup" steps 1-4 on your server to clone the repo, create a virtual environment, install dependencies, and set up your production `.env` file.
 
-### 2. Create a `systemd` Service File
+### 2. Create `systemd` Service Files
+
+You need **two** services: one for Gunicorn (the web app) and one for the scheduler.
+
+#### A. Gunicorn Service
 
 This will ensure Gunicorn runs as a background service and restarts automatically.
 
@@ -90,10 +94,34 @@ ExecStart=/path/to/your/letterboxd-tracker/venv/bin/gunicorn --workers 3 --bind 
 WantedBy=multi-user.target
 ```
 
-**Enable and start the service:**
+#### B. Scheduler Service
+
+This service runs the background scraping scheduler in a separate process.
+
+Create a file at `/etc/systemd/system/letterboxd-scheduler.service`:
+```ini
+[Unit]
+Description=Letterboxd Tracker Scheduler
+After=network.target
+
+[Service]
+User=your_user
+Group=www-data
+WorkingDirectory=/path/to/your/letterboxd-tracker
+Environment="PATH=/path/to/your/letterboxd-tracker/venv/bin"
+ExecStart=/path/to/your/letterboxd-tracker/venv/bin/python run_scheduler.py
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Enable and start both services:**
 ```bash
+sudo systemctl daemon-reload
 sudo systemctl start letterboxd-tracker.service
 sudo systemctl enable letterboxd-tracker.service
+sudo systemctl start letterboxd-scheduler.service
+sudo systemctl enable letterboxd-scheduler.service
 ```
 
 ### 3. Configure Nginx as a Reverse Proxy
