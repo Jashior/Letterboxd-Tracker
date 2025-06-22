@@ -133,6 +133,13 @@ sudo systemctl status letterboxd-tracker-scheduler.service
 sudo journalctl -u letterboxd-tracker-scheduler.service -f
 ```
 
+> **Note:**  
+> In production, the admin dashboard may display "Scheduler is running in a separate process" instead of the next scheduled scrape time.  
+> To check the next scheduled run, use:
+> ```bash
+> sudo journalctl -u letterboxd-tracker-scheduler.service -f
+> ```
+
 ### 3. Configure Nginx as a Reverse Proxy
 
 Create a file at `/etc/nginx/sites-available/letterboxd-tracker`:
@@ -162,3 +169,24 @@ sudo systemctl restart nginx
 4.  Run database migrations if needed: `flask db upgrade`
 5.  **Restart the Gunicorn service to apply changes:** `sudo systemctl restart letterboxd-tracker.service`
 6.  Check the status and logs: `sudo systemctl status letterboxd-tracker.service` and `sudo journalctl -u letterboxd-tracker.service -f`
+
+---
+
+## Troubleshooting
+
+- **Web app or scheduler service fails to start:**  
+  Check the logs for errors:
+  ```bash
+  sudo journalctl -u letterboxd-tracker.service -f
+  sudo journalctl -u letterboxd-tracker-scheduler.service -f
+  ```
+- **"Scheduler not running or job not found" in the dashboard:**  
+  This is normal in production when the scheduler runs as a separate service. Use the logs to check the next scheduled run.
+- **AssertionError about duplicate endpoints:**  
+  Ensure `SCHEDULER_API_ENABLED` is set to `False` in `run_scheduler.py` and only `True` in your main app config.
+
+- **Remember:**  
+  Replace all `/path/to/your/letterboxd-tracker` and `your_user` placeholders with your actual paths and username.
+
+---
+
