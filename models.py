@@ -17,6 +17,7 @@ class Film(db.Model):
     last_scraped_at = db.Column(db.DateTime, nullable=True)
     last_known_average_rating = db.Column(db.Float, nullable=True) # For quick display
     last_known_rating_count = db.Column(db.Integer, nullable=True) # For quick display
+    display_order = db.Column(db.Integer, nullable=False, server_default='0') # For custom sorting
 
     ratings = db.relationship('RatingSnapshot', backref='film', lazy=True, cascade="all, delete-orphan")
 

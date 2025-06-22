@@ -77,7 +77,7 @@ def logout():
 @app.route('/admin')
 @login_required
 def admin_dashboard():
-    films = Film.query.order_by(Film.display_name).all()
+    films = Film.query.order_by(Film.display_order.asc()).all()
     job = scheduler.get_job(SCRAPE_JOB_ID)
     next_run_time = job.next_run_time if job else None
     return render_template('admin/dashboard.html', films=films, next_run_time=next_run_time)
@@ -104,13 +104,17 @@ def add_film():
         flash(f'Could not fetch initial data for "{slug}". Please check the slug or try again later.', 'danger')
         return redirect(url_for('admin_dashboard'))
 
+    # Determine the display order for the new film
+    max_order = db.session.query(db.func.max(Film.display_order)).scalar() or 0
+
     new_film = Film(
         letterboxd_slug=slug,
         display_name=scraped_data.get('display_name', slug),
         year=scraped_data.get('year'),
         director=scraped_data.get('director'),
         poster_url=scraped_data.get('poster_url'),
-        is_tracked=True # Default to tracked
+        is_tracked=True, # Default to tracked
+        display_order=max_order + 1
     )
     db.session.add(new_film)
     
@@ -186,6 +190,31 @@ def scrape_now_film(film_id):
         flash(f'Failed to scrape new data for "{film.display_name}". Check logs.', 'warning')
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/film/move/<int:film_id>/<string:direction>', methods=['POST'])
+@login_required
+def move_film(film_id, direction):
+    film_to_move = Film.query.get_or_404(film_id)
+    
+    if direction == 'up':
+        # Find the film with the next lower display_order to swap with
+        film_to_swap = Film.query.filter(Film.display_order < film_to_move.display_order).order_by(Film.display_order.desc()).first()
+    elif direction == 'down':
+        # Find the film with the next higher display_order to swap with
+        film_to_swap = Film.query.filter(Film.display_order > film_to_move.display_order).order_by(Film.display_order.asc()).first()
+    else:
+        flash('Invalid move direction.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    if film_to_swap:
+        # Swap display order values
+        original_order = film_to_move.display_order
+        film_to_move.display_order = film_to_swap.display_order
+        film_to_swap.display_order = original_order
+        db.session.commit()
+        flash(f'Adjusted order for "{film_to_move.display_name}".', 'success')
+    
+    return redirect(url_for('admin_dashboard'))
+
 # Only register the scheduler status route if NOT running in the scheduler process
 import os
 
@@ -214,8 +243,10 @@ if not os.environ.get("RUNNING_SCHEDULER_PROCESS"):
 # --- Public Routes ---
 @app.route('/')
 def index():
-    films = Film.query.order_by(Film.display_name).all()
-    return render_template('public/index.html', films=films)
+    all_films = Film.query.order_by(Film.display_order.asc()).all()
+    films_with_data = [f for f in all_films if f.last_known_average_rating is not None]
+    films_without_data = [f for f in all_films if f.last_known_average_rating is None]
+    return render_template('public/index.html', films_with_data=films_with_data, films_without_data=films_without_data)
 
 @app.route('/film/<letterboxd_slug>')
 def film_detail(letterboxd_slug):

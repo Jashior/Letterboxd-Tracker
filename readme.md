@@ -167,8 +167,12 @@ sudo systemctl restart nginx
 2.  Pull the latest code: `git pull`
 3.  Update dependencies if needed: `pip install -r requirements.txt`
 4.  Run database migrations if needed: `flask db upgrade`
-5.  **Restart the Gunicorn service to apply changes:** `sudo systemctl restart letterboxd-tracker.service`
-6.  Check the status and logs: `sudo systemctl status letterboxd-tracker.service` and `sudo journalctl -u letterboxd-tracker.service -f`
+5.  **Restart the services to apply changes:**
+    ```bash
+    sudo systemctl restart letterboxd-tracker.service
+    sudo systemctl restart letterboxd-tracker-scheduler.service
+    ```
+6.  Check the status and logs for each service.
 
 ---
 
@@ -189,4 +193,3 @@ sudo systemctl restart nginx
   Replace all `/path/to/your/letterboxd-tracker` and `your_user` placeholders with your actual paths and username.
 
 ---
-

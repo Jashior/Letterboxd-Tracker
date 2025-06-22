@@ -36,6 +36,7 @@ Tracker{% endblock %} {% block content %}
   <table class="table table-striped table-hover">
     <thead>
       <tr>
+        <th style="width: 5%">Order</th>
         <th>Poster</th>
         <th>Display Name (Year)</th>
         <th>Slug</th>
@@ -50,6 +51,47 @@ Tracker{% endblock %} {% block content %}
     <tbody>
       {% for film in films %}
       <tr>
+        <td class="align-middle">
+          <div class="d-flex flex-column align-items-center">
+            <form
+              action="{{ url_for('move_film', film_id=film.id, direction='up') }}"
+              method="POST"
+            >
+              <button
+                type="submit"
+                class="btn btn-sm btn-outline-secondary border-0"
+                {%
+                if
+                loop.first
+                %}disabled{%
+                endif
+                %}
+                title="Move Up"
+              >
+                <i class="fas fa-arrow-up"></i>
+              </button>
+            </form>
+            <span class="text-muted small">{{ film.display_order }}</span>
+            <form
+              action="{{ url_for('move_film', film_id=film.id, direction='down') }}"
+              method="POST"
+            >
+              <button
+                type="submit"
+                class="btn btn-sm btn-outline-secondary border-0"
+                {%
+                if
+                loop.last
+                %}disabled{%
+                endif
+                %}
+                title="Move Down"
+              >
+                <i class="fas fa-arrow-down"></i>
+              </button>
+            </form>
+          </div>
+        </td>
         <td>
           {% if film.poster_url %}
           <img
@@ -61,16 +103,16 @@ Tracker{% endblock %} {% block content %}
           <span class="text-muted">No Poster</span>
           {% endif %}
         </td>
-        <td>
+        <td class="align-middle">
           <a
             href="{{ url_for('film_detail', letterboxd_slug=film.letterboxd_slug) }}"
             >{{ film.display_name }}</a
           >
           ({{ film.year or 'N/A' }})
         </td>
-        <td>{{ film.letterboxd_slug }}</td>
-        <td>{{ film.director or 'N/A' }}</td>
-        <td>
+        <td class="align-middle">{{ film.letterboxd_slug }}</td>
+        <td class="align-middle">{{ film.director or 'N/A' }}</td>
+        <td class="align-middle">
           <form
             method="POST"
             action="{{ url_for('toggle_tracking', film_id=film.id) }}"
@@ -84,19 +126,19 @@ Tracker{% endblock %} {% block content %}
             </button>
           </form>
         </td>
-        <td>
+        <td class="align-middle">
           {{ film.last_scraped_at.strftime('%Y-%m-%d %H:%M') if
           film.last_scraped_at else 'Never' }}
         </td>
-        <td>
+        <td class="align-middle">
           {{ '%.2f'|format(film.last_known_average_rating) if
           film.last_known_average_rating is not none else 'N/A' }}
         </td>
-        <td>
+        <td class="align-middle">
           {{ '{:,}'.format(film.last_known_rating_count) if
           film.last_known_rating_count is not none else 'N/A' }}
         </td>
-        <td>
+        <td class="align-middle">
           <form
             method="POST"
             action="{{ url_for('scrape_now_film', film_id=film.id) }}"
