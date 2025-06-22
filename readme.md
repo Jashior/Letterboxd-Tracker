@@ -98,7 +98,7 @@ WantedBy=multi-user.target
 
 This service runs the background scraping scheduler in a separate process.
 
-Create a file at `/etc/systemd/system/letterboxd-scheduler.service`:
+Create a file at `/etc/systemd/system/letterboxd-tracker-scheduler.service`:
 ```ini
 [Unit]
 Description=Letterboxd Tracker Scheduler
@@ -120,8 +120,17 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
 sudo systemctl start letterboxd-tracker.service
 sudo systemctl enable letterboxd-tracker.service
-sudo systemctl start letterboxd-scheduler.service
-sudo systemctl enable letterboxd-scheduler.service
+sudo systemctl start letterboxd-tracker-scheduler.service
+sudo systemctl enable letterboxd-tracker-scheduler.service
+```
+
+**Check the status and logs for each service:**
+```bash
+sudo systemctl status letterboxd-tracker.service
+sudo journalctl -u letterboxd-tracker.service -f
+
+sudo systemctl status letterboxd-tracker-scheduler.service
+sudo journalctl -u letterboxd-tracker-scheduler.service -f
 ```
 
 ### 3. Configure Nginx as a Reverse Proxy

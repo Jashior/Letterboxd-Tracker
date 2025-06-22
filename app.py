@@ -186,25 +186,29 @@ def scrape_now_film(film_id):
         flash(f'Failed to scrape new data for "{film.display_name}". Check logs.', 'warning')
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/scheduler_status')
-@login_required
-def scheduler_status():
-    """An endpoint to check the status of the background scheduler job."""
-    job = scheduler.get_job(SCRAPE_JOB_ID)
-    status_data = {
-        "scheduler_running": scheduler.running
-    }
-    if job:
-        status_data["job_found"] = True
-        status_data["job_id"] = job.id
-        status_data["next_run"] = job.next_run_time.isoformat() if job.next_run_time else "N/A"
-    else:
-        status_data["job_found"] = False
-        status_data["job_id"] = SCRAPE_JOB_ID
-        status_data["error"] = "Job not found. It may not have been scheduled correctly."
+# Only register the scheduler status route if NOT running in the scheduler process
+import os
 
-    # Using jsonify will correctly set the Content-Type header to application/json
-    return jsonify(status_data)
+if not os.environ.get("RUNNING_SCHEDULER_PROCESS"):
+    @app.route('/admin/scheduler_status')
+    @login_required
+    def scheduler_status():
+        """An endpoint to check the status of the background scheduler job."""
+        job = scheduler.get_job(SCRAPE_JOB_ID)
+        status_data = {
+            "scheduler_running": scheduler.running
+        }
+        if job:
+            status_data["job_found"] = True
+            status_data["job_id"] = job.id
+            status_data["next_run"] = job.next_run_time.isoformat() if job.next_run_time else "N/A"
+        else:
+            status_data["job_found"] = False
+            status_data["job_id"] = SCRAPE_JOB_ID
+            status_data["error"] = "Job not found. It may not have been scheduled correctly."
+
+        # Using jsonify will correctly set the Content-Type header to application/json
+        return jsonify(status_data)
 
 
 # --- Public Routes ---

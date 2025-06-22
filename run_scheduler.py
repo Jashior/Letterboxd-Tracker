@@ -1,3 +1,6 @@
+import os
+os.environ["RUNNING_SCHEDULER_PROCESS"] = "1"
+
 from app import app
 from scheduler import init_scheduler
 
