@@ -117,43 +117,31 @@ def add_film():
         display_order=max_order + 1
     )
     db.session.add(new_film)
-    
-    # Add initial rating snapshot if available
-    if 'average_rating' in scraped_data and 'rating_count' in scraped_data:
-        new_film.last_known_average_rating = scraped_data['average_rating']
-        new_film.last_known_rating_count = scraped_data['rating_count']
-        new_film.last_scraped_at = datetime.utcnow()
-        snapshot = RatingSnapshot(
-            film_id=new_film.id, # This will be set after commit if new_film is flushed
-            average_rating=scraped_data['average_rating'],
-            rating_count=scraped_data['rating_count']
-        )
-        # Need to commit film first to get its ID for the snapshot, or handle it carefully.
-        # Let's commit film, then add snapshot related to it.
-        try:
-            db.session.commit() # Commit film to get ID
-            
-            # Re-fetch the film to ensure we have the ID for the snapshot if it was a new film.
-            # Or, if using Flask-SQLAlchemy, the ID might be populated after flush.
-            # For safety, fetch it again if it's a new entry, or associate directly
-            # if the ORM handles it. Assuming new_film.id is populated after commit.
 
-            snapshot.film_id = new_film.id # Ensure film_id is set
+    try:
+        # Add initial rating snapshot if available
+        if 'average_rating' in scraped_data and 'rating_count' in scraped_data:
+            new_film.last_known_average_rating = scraped_data['average_rating']
+            new_film.last_known_rating_count = scraped_data['rating_count']
+            new_film.last_scraped_at = datetime.utcnow()
+            
+            # The 'film' back-reference on the RatingSnapshot model can be used
+            # to associate the two objects before committing. SQLAlchemy handles the foreign key.
+            snapshot = RatingSnapshot(
+                average_rating=scraped_data['average_rating'],
+                rating_count=scraped_data['rating_count'],
+                film=new_film # Associate directly with the film object
+            )
             db.session.add(snapshot)
-            db.session.commit()
             flash(f'Film "{new_film.display_name}" added and initial rating snapshot saved.', 'success')
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error adding film {slug} or its snapshot: {e}")
-            flash(f'Error adding film "{slug}": {e}', 'danger')
-    else:
-        try:
-            db.session.commit()
+        else:
             flash(f'Film "{new_film.display_name}" added. No rating data found yet (e.g., unreleased).', 'success')
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Error adding film {slug} (no initial rating): {e}")
-            flash(f'Error adding film "{slug}": {e}', 'danger')
+        
+        db.session.commit() # A single commit for the entire transaction
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error adding film {slug}: {e}")
+        flash(f'An error occurred while adding the film "{slug}".', 'danger')
 
     return redirect(url_for('admin_dashboard'))
 
