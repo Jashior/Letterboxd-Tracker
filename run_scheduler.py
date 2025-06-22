@@ -1,5 +1,6 @@
 import os
 os.environ["RUNNING_SCHEDULER_PROCESS"] = "1"
+os.environ["SCHEDULER_API_ENABLED"] = "False"  # <-- Add this line
 
 from app import app
 from scheduler import init_scheduler
