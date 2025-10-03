@@ -34,17 +34,11 @@ content %}
         <a
           href="{{ url_for('film_detail', letterboxd_slug=film.letterboxd_slug) }}"
         >
-          {{ film.display_name }}
+          {{ film.display_name }}{% if film.year %} ({{ film.year }}){% endif %}
         </a>
       </h5>
 
-      <div class="mb-3">
-        <span class="badge bg-secondary"
-          >{{ film.year or 'Unknown Year' }}</span
-        >
-      </div>
-
-      <p class="card-text flex-grow-1">
+      <p class="card-text flex-grow-1 d-flex align-items-center">
         <i class="fas fa-video me-2 text-muted"></i>
         <small class="text-muted"
           >{{ film.director or 'Unknown Director' }}</small
@@ -198,6 +192,14 @@ content %}
   .card-title {
     margin-bottom: 0.5rem;
     font-size: 1rem;
+    line-height: 1.2;
+    min-height: 2.4rem; /* force two-line block for alignment */
+  }
+  .card-title a {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .card-text {
     margin-bottom: 0.5rem;

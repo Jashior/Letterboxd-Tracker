@@ -211,13 +211,13 @@ History{% endblock %} {% block head_extra %}
 <div class="film-detail-page-content">
   <!-- Film Header: Title, Meta, Actions -->
   <section class="film-header-section text-center text-lg-start mt-4">
-    <h1 class="film-title-main">{{ film.display_name }}</h1>
+    <h1 class="film-title-main">
+      {{ film.display_name }}{% if film.year %} ({{ film.year }}){% endif %}
+    </h1>
     <div
       class="d-flex flex-wrap justify-content-center justify-content-lg-start align-items-center gap-2 mb-3 film-meta-badges"
     >
-      <span class="badge bg-custom-secondary"
-        >{{ film.year or 'Unknown Year' }}</span
-      >
+      {# Year moved into title visually; keep badge out to avoid duplication #}
       {% if film.director %}
       <span class="badge bg-custom-outline-accent">{{ film.director }}</span>
       {% endif %}
@@ -373,15 +373,15 @@ History{% endblock %} {% block head_extra %}
 </div>
 {% endblock %} {% block scripts_extra %} {% if ratings %}
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const chartContainer = document.querySelector('.chart-container');
-    const canvasElement = document.getElementById('ratingChart');
+  document.addEventListener("DOMContentLoaded", function () {
+    const chartContainer = document.querySelector(".chart-container");
+    const canvasElement = document.getElementById("ratingChart");
     if (!canvasElement) return;
 
-    const loadingDiv = document.createElement('div');
+    const loadingDiv = document.createElement("div");
     loadingDiv.className =
-      'chart-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center';
-    loadingDiv.style.backgroundColor = 'var(--card-bg)';
+      "chart-loading position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center";
+    loadingDiv.style.backgroundColor = "var(--card-bg)";
     loadingDiv.innerHTML = `
       <div class="text-center">
         <i class="fas fa-spinner fa-2x mb-2" style="color: var(--accent-color);"></i>
@@ -413,33 +413,33 @@ History{% endblock %} {% block head_extra %}
           return;
         }
 
-        const ctx = canvasElement.getContext('2d');
+        const ctx = canvasElement.getContext("2d");
         const rootStyles = getComputedStyle(document.documentElement);
         const accentColor =
-          rootStyles.getPropertyValue('--accent-color').trim() || '#667eea';
+          rootStyles.getPropertyValue("--accent-color").trim() || "#667eea";
         const textColorSecondary =
-          rootStyles.getPropertyValue('--text-secondary').trim() || '#a0aec0';
+          rootStyles.getPropertyValue("--text-secondary").trim() || "#a0aec0";
         const gridBorderColor =
-          rootStyles.getPropertyValue('--border-color').trim() ||
-          'rgba(255,255,255,0.1)';
+          rootStyles.getPropertyValue("--border-color").trim() ||
+          "rgba(255,255,255,0.1)";
         const cardBgColor =
-          rootStyles.getPropertyValue('--card-bg').trim() || '#242a33';
+          rootStyles.getPropertyValue("--card-bg").trim() || "#242a33";
         const textPrimaryColor =
-          rootStyles.getPropertyValue('--text-primary').trim() || '#e2e8f0';
+          rootStyles.getPropertyValue("--text-primary").trim() || "#e2e8f0";
 
         function hexToRgba(hex, alpha) {
           let r = 0,
             g = 0,
             b = 0;
-          if (!hex || typeof hex !== 'string') hex = '#000000';
-          if (hex.startsWith('rgba')) return hex;
-          if (hex.startsWith('rgb')) {
+          if (!hex || typeof hex !== "string") hex = "#000000";
+          if (hex.startsWith("rgba")) return hex;
+          if (hex.startsWith("rgb")) {
             const parts = hex.match(/[\d.]+/g);
             if (parts && parts.length >= 3)
               return `rgba(${parts[0]},${parts[1]},${parts[2]},${alpha})`;
             return `rgba(0,0,0,${alpha})`;
           }
-          hex = hex.replace('#', '');
+          hex = hex.replace("#", "");
           if (hex.length === 3) {
             hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
           }
@@ -461,7 +461,7 @@ History{% endblock %} {% block head_extra %}
 
         // Find yMin/yMax for ratings
         const allRatings = avgData
-          .filter((r) => r && typeof r.y === 'number')
+          .filter((r) => r && typeof r.y === "number")
           .map((r) => r.y);
         let yMin = 0.5,
           yMax = 5.0;
@@ -486,7 +486,7 @@ History{% endblock %} {% block head_extra %}
 
         // Find yMin/yMax for rating count
         const allCounts = countData
-          .filter((r) => r && typeof r.y === 'number')
+          .filter((r) => r && typeof r.y === "number")
           .map((r) => r.y);
         let countMin = 0,
           countMax = 10;
@@ -507,11 +507,11 @@ History{% endblock %} {% block head_extra %}
         gradient.addColorStop(1, hexToRgba(accentColor, 0.05));
 
         new Chart(ctx, {
-          type: 'line',
+          type: "line",
           data: {
             datasets: [
               {
-                label: 'Average Rating',
+                label: "Average Rating",
                 data: avgData,
                 borderColor: accentColor,
                 backgroundColor: gradient,
@@ -524,20 +524,20 @@ History{% endblock %} {% block head_extra %}
                 pointRadius: avgData.length === 1 ? 6 : 4,
                 pointHoverRadius: avgData.length === 1 ? 9 : 7,
                 showLine: !(avgData.length === 1),
-                yAxisID: 'y',
+                yAxisID: "y",
                 order: 1,
               },
               {
-                label: 'Rating Count',
+                label: "Rating Count",
                 data: countData,
                 borderColor: hexToRgba(textColorSecondary, 0.5),
-                backgroundColor: 'transparent',
+                backgroundColor: "transparent",
                 borderWidth: 2,
                 fill: false,
                 tension: 0.1,
                 pointRadius: 0,
                 pointHoverRadius: 0,
-                yAxisID: 'yCount',
+                yAxisID: "yCount",
                 order: 2,
                 borderDash: [4, 4],
                 spanGaps: true,
@@ -547,7 +547,7 @@ History{% endblock %} {% block head_extra %}
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: { intersect: false, mode: 'index' },
+            interaction: { intersect: false, mode: "index" },
             plugins: {
               legend: { display: false },
               tooltip: {
@@ -561,30 +561,30 @@ History{% endblock %} {% block head_extra %}
                 displayColors: false,
                 titleFont: {
                   size: 13,
-                  weight: '500',
-                  family: 'Inter, sans-serif',
+                  weight: "500",
+                  family: "Inter, sans-serif",
                 },
-                bodyFont: { size: 12, family: 'Inter, sans-serif' },
+                bodyFont: { size: 12, family: "Inter, sans-serif" },
                 boxPadding: 4,
                 callbacks: {
                   title: (tooltipItems) => {
                     const originalTimestamp = tooltipItems[0].raw.x;
                     return new Date(originalTimestamp).toLocaleDateString(
-                      'en-US',
+                      "en-US",
                       {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
                         hour12: true,
                       }
                     );
                   },
                   label: (ctx) => {
-                    if (ctx.dataset.label === 'Average Rating') {
+                    if (ctx.dataset.label === "Average Rating") {
                       return `Rating: ${ctx.parsed.y.toFixed(2)} / 5.0`;
-                    } else if (ctx.dataset.label === 'Rating Count') {
+                    } else if (ctx.dataset.label === "Rating Count") {
                       return `Ratings: ${ctx.parsed.y.toLocaleString()}`;
                     }
                   },
@@ -593,20 +593,20 @@ History{% endblock %} {% block head_extra %}
             },
             scales: {
               x: {
-                type: 'time',
+                type: "time",
                 time: {
                   unit:
                     avgData.length === 1
-                      ? 'day'
+                      ? "day"
                       : data.labels.length > 90
-                      ? 'month'
+                      ? "month"
                       : data.labels.length > 21
-                      ? 'week'
-                      : 'day',
-                  tooltipFormat: 'PPpp',
+                      ? "week"
+                      : "day",
+                  tooltipFormat: "PPpp",
                   displayFormats: {
-                    hour: 'HH:mm',
-                    day: 'MMM d',
+                    hour: "HH:mm",
+                    day: "MMM d",
                     week: "MMM d ''yy",
                     month: "MMM ''yy",
                   },
@@ -618,7 +618,7 @@ History{% endblock %} {% block head_extra %}
                 },
                 ticks: {
                   color: textColorSecondary,
-                  font: { size: 10, family: 'Inter, sans-serif' },
+                  font: { size: 10, family: "Inter, sans-serif" },
                   maxRotation: 0,
                   autoSkipPadding: 20,
                   major: { enabled: true },
@@ -634,45 +634,45 @@ History{% endblock %} {% block head_extra %}
                 },
                 ticks: {
                   color: textColorSecondary,
-                  font: { size: 10, family: 'Inter, sans-serif' },
+                  font: { size: 10, family: "Inter, sans-serif" },
                   stepSize: yMax - yMin <= 1.0 ? 0.2 : 0.5,
                   padding: 8,
                   callback: (value) => value.toFixed(1),
                 },
                 title: {
                   display: true,
-                  text: 'Average Rating',
+                  text: "Average Rating",
                   color: textColorSecondary,
                   font: { size: 11 },
                 },
               },
               yCount: {
-                position: 'right',
+                position: "right",
                 min: countMin,
                 max: countMax,
                 grid: { drawOnChartArea: false },
                 ticks: {
                   color: hexToRgba(textColorSecondary, 0.5),
-                  font: { size: 10, family: 'Inter, sans-serif' },
+                  font: { size: 10, family: "Inter, sans-serif" },
                   callback: (value) =>
-                    value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value,
+                    value >= 1000 ? (value / 1000).toFixed(1) + "k" : value,
                   padding: 8,
                 },
                 title: {
                   display: true,
-                  text: 'Rating Count',
+                  text: "Rating Count",
                   color: hexToRgba(textColorSecondary, 0.5),
                   font: { size: 11 },
                 },
               },
             },
-            elements: { line: { cubicInterpolationMode: 'monotone' } },
-            animation: { duration: 600, easing: 'easeOutCubic' },
+            elements: { line: { cubicInterpolationMode: "monotone" } },
+            animation: { duration: 600, easing: "easeOutCubic" },
           },
         });
       })
       .catch((error) => {
-        console.error('Error loading chart data:', error);
+        console.error("Error loading chart data:", error);
         if (loadingDiv) loadingDiv.remove();
         const errorMessage = `<div class="text-center py-5 chart-placeholder"><i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: var(--warning-color);"></i><h4 style="color: var(--warning-color);">Error Loading Chart</h4><p class="small mb-0" style="color: var(--text-secondary);">Unable to load rating history data. Please try refreshing.</p></div>`;
         canvasElement.parentNode.innerHTML = errorMessage;
