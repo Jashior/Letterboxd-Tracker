@@ -25,20 +25,20 @@
         --secondary-bg-rgb: 38, 48, 58;
         --card-bg-rgb: 37, 49, 59;
         --border-color-rgb: 47, 59, 70;
-        --accent-rgb: 1, 224, 84; /* #01E054 */
+        --accent-rgb: 88, 180, 135; /* muted teal */
         --card-bg: #25313b;
         --border-color: #2f3b46;
         --text-primary: #e5edf5;
         --text-secondary: #9aa8b5;
-        --accent-color: #01e054; /* green */
-        --accent-hover: #00c64a;
-        --brand-blue: #40bcf4;
-        --brand-orange: #ff8000;
-        --warning-color: #ff8000;
+        --accent-color: #58b487; /* muted accent */
+        --accent-hover: #4aa67a;
+        --brand-blue: #7bbfe0; /* muted blue for links */
+        --brand-orange: #ff9a42; /* slightly softer */
+        --warning-color: #ff9a42;
         --danger-color: #fc8181;
         --success-color: #68d391;
-        --gradient-primary: linear-gradient(135deg, #01e054 0%, #00c64a 100%);
-        --gradient-secondary: linear-gradient(135deg, #40bcf4 0%, #01e054 100%);
+        --gradient-primary: linear-gradient(135deg, #58b487 0%, #4aa67a 100%);
+        --gradient-secondary: linear-gradient(135deg, #7bbfe0 0%, #58b487 100%);
         --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12),
           0 1px 2px rgba(0, 0, 0, 0.24);
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -65,17 +65,17 @@
         height: 100%;
         background: radial-gradient(
             circle at 20% 20%,
-            rgba(64, 188, 244, 0.08) 0%,
+            rgba(123, 191, 224, 0.05) 0%,
             transparent 50%
           ),
           radial-gradient(
             circle at 80% 80%,
-            rgba(1, 224, 84, 0.08) 0%,
+            rgba(88, 180, 135, 0.05) 0%,
             transparent 50%
           ),
           radial-gradient(
             circle at 40% 40%,
-            rgba(154, 168, 181, 0.08) 0%,
+            rgba(154, 168, 181, 0.05) 0%,
             transparent 50%
           );
         pointer-events: none;
@@ -252,7 +252,7 @@
       }
 
       .alert-warning {
-        background: rgba(255, 128, 0, 0.1);
+        background: rgba(255, 154, 66, 0.1);
         color: var(--warning-color);
         border-left: 4px solid var(--warning-color);
       }
@@ -309,7 +309,7 @@
       }
 
       a:hover {
-        color: #27a9e3; /* slightly darker than brand blue */
+        color: #5aa7cc; /* slightly darker muted blue */
       }
 
       /* Responsive adjustments */
