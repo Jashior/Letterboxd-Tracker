@@ -47,7 +47,7 @@
       body {
         background: var(--primary-bg);
         color: var(--text-primary);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
           system-ui, sans-serif;
         line-height: 1.6;
         overflow-x: hidden;
@@ -55,7 +55,7 @@
 
       /* Background Pattern */
       body::before {
-        content: '';
+        content: "";
         position: fixed;
         top: 0;
         left: 0;
@@ -137,7 +137,7 @@
       }
 
       .card::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
@@ -284,7 +284,7 @@
       }
 
       h2::after {
-        content: '';
+        content: "";
         position: absolute;
         bottom: 0;
         left: 0;
@@ -430,12 +430,6 @@
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('logout') }}">
                 <i class="fas fa-sign-out-alt me-1"></i>Logout
-              </a>
-            </li>
-            {% else %}
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('login') }}">
-                <i class="fas fa-user me-1"></i>Admin Login
               </a>
             </li>
             {% endif %}
