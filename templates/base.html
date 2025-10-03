@@ -19,24 +19,26 @@
     />
     <style>
       :root {
-        --primary-bg: #0f1419;
-        --secondary-bg: #1a1f26;
-        --primary-bg-rgb: 15, 20, 25; /* For #0f1419 */
-        --secondary-bg-rgb: 26, 31, 38; /* For #1a1f26 */
-        --card-bg-rgb: 36, 42, 51; /* For #242a33 */
-        --border-color-rgb: 45, 55, 72; /* For #2d3748 */
-        --accent-rgb: 0, 212, 170; /* For #00d4aa */
-        --card-bg: #242a33;
-        --border-color: #2d3748;
-        --text-primary: #e2e8f0;
-        --text-secondary: #a0aec0;
-        --accent-color: #00d4aa;
-        --accent-hover: #00b894;
-        --warning-color: #f6ad55;
+        --primary-bg: #202830;
+        --secondary-bg: #26303a;
+        --primary-bg-rgb: 32, 40, 48;
+        --secondary-bg-rgb: 38, 48, 58;
+        --card-bg-rgb: 37, 49, 59;
+        --border-color-rgb: 47, 59, 70;
+        --accent-rgb: 1, 224, 84; /* #01E054 */
+        --card-bg: #25313b;
+        --border-color: #2f3b46;
+        --text-primary: #e5edf5;
+        --text-secondary: #9aa8b5;
+        --accent-color: #01e054; /* green */
+        --accent-hover: #00c64a;
+        --brand-blue: #40bcf4;
+        --brand-orange: #ff8000;
+        --warning-color: #ff8000;
         --danger-color: #fc8181;
         --success-color: #68d391;
-        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --gradient-primary: linear-gradient(135deg, #01e054 0%, #00c64a 100%);
+        --gradient-secondary: linear-gradient(135deg, #40bcf4 0%, #01e054 100%);
         --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12),
           0 1px 2px rgba(0, 0, 0, 0.24);
         --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
@@ -63,17 +65,17 @@
         height: 100%;
         background: radial-gradient(
             circle at 20% 20%,
-            rgba(120, 119, 198, 0.1) 0%,
+            rgba(64, 188, 244, 0.08) 0%,
             transparent 50%
           ),
           radial-gradient(
             circle at 80% 80%,
-            rgba(255, 119, 198, 0.1) 0%,
+            rgba(1, 224, 84, 0.08) 0%,
             transparent 50%
           ),
           radial-gradient(
             circle at 40% 40%,
-            rgba(120, 219, 255, 0.1) 0%,
+            rgba(154, 168, 181, 0.08) 0%,
             transparent 50%
           );
         pointer-events: none;
@@ -82,7 +84,7 @@
 
       /* Navbar Styling */
       .navbar {
-        background: rgba(26, 31, 38, 0.95) !important;
+        background: rgba(38, 48, 58, 0.95) !important;
         backdrop-filter: blur(20px);
         border-bottom: 1px solid var(--border-color);
         box-shadow: var(--shadow-sm);
@@ -92,10 +94,7 @@
       .navbar-brand {
         font-weight: 700;
         font-size: 1.5rem;
-        background: var(--gradient-primary);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: var(--accent-color);
       }
 
       .nav-link {
@@ -143,7 +142,7 @@
         left: 0;
         right: 0;
         height: 3px;
-        background: var(--gradient-primary);
+        background: var(--accent-color);
         opacity: 0;
         transition: opacity 0.3s ease;
       }
@@ -193,7 +192,7 @@
       }
 
       .card-footer {
-        background: rgba(45, 55, 72, 0.5);
+        background: rgba(47, 59, 70, 0.5);
         border-top: 1px solid var(--border-color);
         padding: 1rem 1.5rem;
       }
@@ -209,7 +208,7 @@
       }
 
       .btn-primary {
-        background: var(--gradient-primary);
+        background: var(--accent-color);
         border: none;
         box-shadow: var(--shadow-sm);
       }
@@ -217,16 +216,17 @@
       .btn-primary:hover {
         transform: translateY(-2px);
         box-shadow: var(--shadow-md);
+        background: var(--accent-hover);
       }
 
       .btn-outline-info {
-        color: var(--accent-color);
-        border-color: var(--accent-color);
+        color: var(--brand-blue);
+        border-color: var(--brand-blue);
         background: transparent;
       }
 
       .btn-outline-info:hover {
-        background: var(--accent-color);
+        background: var(--brand-blue);
         color: var(--primary-bg);
         transform: translateY(-2px);
       }
@@ -252,7 +252,7 @@
       }
 
       .alert-warning {
-        background: rgba(246, 173, 85, 0.1);
+        background: rgba(255, 128, 0, 0.1);
         color: var(--warning-color);
         border-left: 4px solid var(--warning-color);
       }
@@ -271,10 +271,7 @@
 
       h1 {
         font-size: 2.5rem;
-        background: var(--gradient-primary);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: var(--text-primary);
       }
 
       h2 {
@@ -290,7 +287,7 @@
         left: 0;
         width: 60px;
         height: 3px;
-        background: var(--gradient-primary);
+        background: var(--accent-color);
         border-radius: 2px;
       }
 
@@ -306,13 +303,13 @@
 
       /* Links */
       a {
-        color: var(--accent-color);
+        color: var(--brand-blue);
         text-decoration: none;
         transition: color 0.3s ease;
       }
 
       a:hover {
-        color: var(--accent-hover);
+        color: #27a9e3; /* slightly darker than brand blue */
       }
 
       /* Responsive adjustments */
@@ -379,7 +376,7 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.25rem 0.75rem;
-        background: rgba(0, 212, 170, 0.1);
+        background: rgba(var(--accent-rgb), 0.12);
         border: 1px solid var(--accent-color);
         border-radius: 20px;
         font-weight: 600;
