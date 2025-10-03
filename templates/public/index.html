@@ -15,7 +15,7 @@ content %}
           src="{{ film.poster_url.replace('-0-150-0-225-crop', '-0-300-0-450-crop') }}"
           class="card-img-top"
           alt="{{ film.display_name }} Poster"
-          style="height: 300px; object-fit: cover"
+          style="height: 220px; object-fit: cover"
         />
       </a>
       <div class="position-absolute top-0 end-0 p-2">
@@ -103,7 +103,7 @@ content %}
   </button>
   <div class="collapse show" id="tracked-films">
     <div
-      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
+      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-6 g-3"
       id="films-with-data"
     >
       {% for film in films_with_data %} {{ film_card(film) }} {% endfor %}
@@ -126,7 +126,7 @@ content %}
   </button>
   <div class="collapse show" id="upcoming-films">
     <div
-      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
+      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-6 g-3"
       id="films-without-data"
     >
       {% for film in films_without_data %} {{ film_card(film) }} {% endfor %}
@@ -149,7 +149,7 @@ content %}
   </button>
   <div class="collapse" id="archived-films">
     <div
-      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4"
+      class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-6 g-3"
       id="films-archived"
     >
       {% for film in films_archived %} {{ film_card(film) }} {% endfor %}
@@ -180,6 +180,15 @@ content %}
   .badge {
     font-size: 0.75rem;
     padding: 0.35rem 0.65rem;
+  }
+
+  /* Compact card layout defaults (overrides base) */
+  .card-body {
+    padding: 1rem;
+  }
+  .card-title {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
   }
 
   .card-img-top {
@@ -226,6 +235,27 @@ content %}
 
     .card-img-top {
       height: 250px !important;
+    }
+  }
+
+  /* Desktop compaction for very large screens */
+  @media (min-width: 1400px) {
+    .card-img-top {
+      height: 200px !important;
+    }
+    .card-body {
+      padding: 0.9rem;
+    }
+    .card-title {
+      font-size: 0.95rem;
+    }
+    .rating-display {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+    }
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.3rem 0.55rem;
     }
   }
 </style>
