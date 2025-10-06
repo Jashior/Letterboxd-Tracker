@@ -2,6 +2,8 @@
 
 A Flask application to track the average rating and rating count of films on Letterboxd over time. It scrapes film pages periodically and stores snapshots of the rating data, which can be viewed on a public dashboard with historical charts.
 
+<img width="1336" height="828" alt="firefox_mPTWwuljps" src="https://github.com/user-attachments/assets/7f5820b6-9e96-477f-a293-eec3e889cf7f" />
+
 ## Features
 
 -   **Admin Dashboard**: Add, remove, and manage films to be tracked.
