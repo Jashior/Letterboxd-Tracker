@@ -668,7 +668,6 @@ History{% endblock %} {% block head_extra %}
         });
       })
       .catch((error) => {
-        console.error("Error loading chart data:", error);
         if (loadingDiv) loadingDiv.remove();
         const errorMessage = `<div class="text-center py-5 chart-placeholder"><i class="fas fa-exclamation-triangle fa-3x mb-3" style="color: var(--warning-color);"></i><h4 style="color: var(--warning-color);">Error Loading Chart</h4><p class="small mb-0" style="color: var(--text-secondary);">Unable to load rating history data. Please try refreshing.</p></div>`;
         canvasElement.parentNode.innerHTML = errorMessage;

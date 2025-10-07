@@ -3,7 +3,7 @@ from flask_apscheduler import APScheduler
 from datetime import datetime, timedelta
 import logging
 import sys; sys.stdout.flush()
-logging.info("APScheduler initialized and started.")
+logging.info("APScheduler initialized.")
 
 from tasks import scheduled_scrape_task # Import the task from our new file
 
@@ -14,10 +14,7 @@ SCRAPE_JOB_ID = "scrape_letterboxd_ratings"
 
 def hello_test_job():
     """Simple test job to verify scheduler is working"""
-    print(f"\n{'='*50}")
-    print(f"HELLO WORLD JOB FIRED at {datetime.now()}")
-    print(f"{'='*50}\n")
-    sys.stdout.flush()
+    logger.info("Hello world test job fired")
 
 def init_scheduler(app):
     """Initializes and starts the APScheduler."""
@@ -25,8 +22,7 @@ def init_scheduler(app):
     if not scheduler.running:
         scheduler.init_app(app)
         scheduler.start()
-        print("DEBUG: Scheduler started and should be running jobs.")
-        import sys; sys.stdout.flush()
+        logger.info("Scheduler started and should be running jobs.")
         logger.info("APScheduler initialized and started.")
 
         # Add a simple test job first
@@ -37,13 +33,12 @@ def init_scheduler(app):
             seconds=30,
             replace_existing=True
         )
-        print(f"DEBUG: Test job added with ID: hello_test_job")
-        sys.stdout.flush()
+        logger.info("Test job added with ID: hello_test_job")
 
         # Check if job already exists to prevent duplicates on app restart
         if not scheduler.get_job(SCRAPE_JOB_ID):
             interval_minutes = int(app.config.get('SCHEDULER_INTERVAL_MINUTES', 60))
-            logger.info(f"DEBUG: interval_minutes = {interval_minutes} (type: {type(interval_minutes)})")
+            logger.debug(f"interval_minutes = {interval_minutes} (type: {type(interval_minutes)})")
             job = scheduler.add_job(
                 id=SCRAPE_JOB_ID,
                 func=scheduled_scrape_task,
@@ -54,13 +49,8 @@ def init_scheduler(app):
             logger.info(f"Scheduled scrape job to run every {interval_minutes} minutes.")
             if hasattr(job, 'next_run_time') and job.next_run_time:
                 logger.info(f"Next scheduled run is at: {job.next_run_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-            print(f"DEBUG: Job added with ID: {SCRAPE_JOB_ID}")
-            sys.stdout.flush()
+            logger.info(f"Job added with ID: {SCRAPE_JOB_ID}")
         else:
-            logger.info("Scrape job already exists.")
-            print("DEBUG: Job already exists, not adding duplicate.")
-            sys.stdout.flush()
+            logger.info("Scrape job already exists; not adding duplicate.")
     else:
         logger.info("APScheduler already running.")
-        print("DEBUG: APScheduler already running.")
-        sys.stdout.flush()
