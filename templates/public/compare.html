@@ -314,6 +314,23 @@ head_extra %}
         showLine: true,
       };
     });
+    // Y-axis scaling for ratings (compare page)
+    // Policy: default [3, 5]. If any point dips below 3, set min to Math.floor(minRating).
+    try {
+      const allRatings = order
+        .flatMap((slug) => (json.datasets[slug] || []).map((p) => p && p.y))
+        .filter((v) => typeof v === "number");
+      let yMin = 3.0;
+      let yMax = 5.0;
+      if (allRatings.length > 0) {
+        const minRatingVal = Math.min(...allRatings);
+        if (minRatingVal < 3.0) {
+          yMin = Math.max(0.5, Math.floor(minRatingVal));
+        }
+      }
+      chart.options.scales.y.min = yMin;
+      chart.options.scales.y.max = yMax;
+    } catch (_) {}
     chart.update();
   };
 

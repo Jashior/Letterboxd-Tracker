@@ -465,28 +465,18 @@ History{% endblock %} {% block head_extra %}
           y: value,
         }));
 
-        // Find yMin/yMax for ratings
+        // Y-axis scaling for ratings
+        // Policy: default [3, 5]. If the minimum rating dips below 3, set min to Math.floor(minRating).
+        // This keeps the chart comparable and readable while giving headroom to 5.0.
         const allRatings = avgData
           .filter((r) => r && typeof r.y === "number")
           .map((r) => r.y);
-        let yMin = 0.5,
-          yMax = 5.0;
+        let yMin = 3.0;
+        let yMax = 5.0;
         if (allRatings.length > 0) {
           const minRatingVal = Math.min(...allRatings);
-          const maxRatingVal = Math.max(...allRatings);
-          const rangeBuffer = avgData.length === 1 ? 0.5 : 0.2;
-          yMin = Math.max(
-            0.5,
-            parseFloat((minRatingVal - rangeBuffer).toFixed(1))
-          );
-          yMax = Math.min(
-            5.0,
-            parseFloat((maxRatingVal + rangeBuffer).toFixed(1))
-          );
-          if (yMax - yMin < 0.5) {
-            const mid = (yMin + yMax) / 2;
-            yMin = Math.max(0.5, parseFloat((mid - 0.25).toFixed(1)));
-            yMax = Math.min(5.0, parseFloat((mid + 0.25).toFixed(1)));
+          if (minRatingVal < 3.0) {
+            yMin = Math.max(0.5, Math.floor(minRatingVal));
           }
         }
 
