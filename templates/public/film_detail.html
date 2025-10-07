@@ -456,14 +456,71 @@ History{% endblock %} {% block head_extra %}
         }
 
         // Prepare data for both datasets
-        const avgData = data.datasets[0].data.map((value, index) => ({
+        let avgData = data.datasets[0].data.map((value, index) => ({
           x: new Date(data.labels[index]).valueOf(),
           y: value,
         }));
-        const countData = data.datasets[1].data.map((value, index) => ({
+        let countData = data.datasets[1].data.map((value, index) => ({
           x: new Date(data.labels[index]).valueOf(),
           y: value,
         }));
+
+        // Density handling (same policy as compare page):
+        // 1) unique-by-x (timestamp) → 2) collapse flat rating runs → 3) downsample
+        const uniqueByX = (points) => {
+          if (!Array.isArray(points) || points.length === 0) return [];
+          const map = new Map();
+          for (const p of points) {
+            if (p && typeof p.x === "number") map.set(p.x, p);
+          }
+          return Array.from(map.keys())
+            .sort((a, b) => a - b)
+            .map((k) => map.get(k));
+        };
+
+        const collapseFlatRuns = (points, epsilon = 0.0001, minRun = 5) => {
+          if (!Array.isArray(points) || points.length === 0) return [];
+          const out = [];
+          let i = 0;
+          while (i < points.length) {
+            let j = i + 1;
+            while (
+              j < points.length &&
+              Math.abs((points[j]?.y ?? 0) - (points[i]?.y ?? 0)) <= epsilon
+            ) {
+              j++;
+            }
+            const runLen = j - i;
+            if (runLen >= minRun) {
+              out.push(points[i]);
+              out.push(points[j - 1]);
+            } else {
+              for (let k = i; k < j; k++) out.push(points[k]);
+            }
+            i = j;
+          }
+          return out;
+        };
+
+        const downsample = (points, maxPoints = 800) => {
+          if (!Array.isArray(points) || points.length <= maxPoints)
+            return points || [];
+          const bucketSize = Math.ceil(points.length / maxPoints);
+          const sampled = [];
+          for (let i = 0; i < points.length; i += bucketSize) {
+            sampled.push(points[i]);
+          }
+          return sampled;
+        };
+
+        // Apply to rating series (avgData)
+        avgData = uniqueByX(avgData);
+        avgData = collapseFlatRuns(avgData, 0.0001, 5);
+        avgData = downsample(avgData, 800);
+
+        // Apply lighter processing to counts
+        countData = uniqueByX(countData);
+        countData = downsample(countData, 800);
 
         // Y-axis scaling for ratings
         // Policy: default [3, 5]. If the minimum rating dips below 3, set min to Math.floor(minRating).

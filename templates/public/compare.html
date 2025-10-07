@@ -551,7 +551,7 @@ head_extra %}
     }
     updateUrl();
     renderChips();
-    if (prefillSlug) {
+    if (prefillSlug || selected.length) {
       await refreshChart();
     }
   })();
