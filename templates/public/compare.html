@@ -1,0 +1,413 @@
+{% extends "base.html" %} {% block title %}Compare Films{% endblock %} {% block
+head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .compare-header {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .dropdown-results {
+    position: absolute;
+    z-index: 1000;
+    width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+  }
+  .dropdown-item {
+    color: var(--text-primary);
+  }
+  .dropdown-item small {
+    color: var(--text-secondary);
+  }
+  /* Spacing for back link under title */
+  .compare-header > .btn {
+    margin-top: 0.4rem;
+  }
+
+  /* Input group focus glow that spans input and button */
+  .input-group .form-control {
+    border-right: 0;
+    box-shadow: none !important;
+  }
+  .input-group .btn {
+    border-left: 0;
+    box-shadow: none !important;
+  }
+  .input-group:focus-within {
+    box-shadow: 0 0 0 0.2rem rgba(var(--accent-rgb), 0.25);
+    border-radius: 0.375rem;
+  }
+  .input-group:focus-within .form-control,
+  .input-group:focus-within .btn {
+    border-color: var(--accent-color);
+  }
+  /* Ensure dropdown overlays properly above chart */
+  #results {
+    z-index: 1050;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: rgba(var(--accent-rgb), 0.08);
+    font-size: 0.85rem;
+  }
+  .chip .chip-close {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+  .input-group > .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+  .chart-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1rem;
+    position: relative;
+    min-height: 260px;
+  }
+  #emptyState {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="compare-header">
+  <h1 class="h3 mb-1">
+    <i class="fas fa-balance-scale me-2"></i>Compare Films
+  </h1>
+  <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm"
+    ><i class="fas fa-arrow-left"></i>Back to Overview</a
+  >
+</div>
+
+<div class="row g-3 align-items-start mb-2">
+  <div class="col-12 position-relative">
+    <label class="form-label">Search and add films</label>
+    <div class="input-group">
+      <input
+        id="filmSearch"
+        class="form-control"
+        type="text"
+        placeholder="Search by title..."
+        autocomplete="off"
+      />
+      <button id="addBtn" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Add film
+      </button>
+    </div>
+    <div id="results" class="dropdown-results d-none"></div>
+  </div>
+</div>
+
+<div class="selected-list mb-3">
+  <div id="selectedChips" class="d-flex flex-wrap gap-2"></div>
+  <small class="text-muted"
+    >Add one or more films to plot their rating trajectories.</small
+  >
+</div>
+
+<div id="compareRoot" data-prefill="{{ prefill|e }}"></div>
+
+<div class="chart-container">
+  <canvas id="compareChart" height="120"></canvas>
+  <div id="emptyState" class="text-center text-muted py-4">
+    No films selected yet.
+  </div>
+</div>
+
+{% endblock %} {% block scripts_extra %}
+<script>
+  const $ = (s) => document.querySelector(s);
+  const createEl = (tag, cls) => {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    return el;
+  };
+
+  const debounce = (fn, ms = 250) => {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(null, args), ms);
+    };
+  };
+
+  const palette = [
+    "rgba(123, 191, 224, 0.9)",
+    "rgba(88, 180, 135, 0.9)",
+    "rgba(255, 154, 66, 0.9)",
+    "rgba(220, 99, 132, 0.9)",
+    "rgba(153, 102, 255, 0.9)",
+    "rgba(255, 205, 86, 0.9)",
+  ];
+
+  let selected = [];
+  const prefillSlug = (
+    document.getElementById("compareRoot")?.dataset?.prefill || ""
+  ).trim();
+
+  const getUrlSlugs = () => {
+    try {
+      const url = new URL(window.location.href);
+      const csv = url.searchParams.get("slugs");
+      if (!csv) return [];
+      return csv
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } catch (_) {
+      return [];
+    }
+  };
+
+  const updateUrl = () => {
+    try {
+      const url = new URL(window.location.href);
+      if (selected.length) {
+        url.searchParams.set("slugs", selected.join(","));
+        url.searchParams.delete("prefill"); // prefer slugs once present
+      } else {
+        url.searchParams.delete("slugs");
+      }
+      window.history.replaceState({}, "", url);
+    } catch (_) {}
+  };
+
+  const initialSlugs = getUrlSlugs();
+  if (initialSlugs.length) {
+    selected = initialSlugs;
+  } else if (prefillSlug) {
+    selected.push(prefillSlug);
+  }
+
+  const searchFilms = async (query) => {
+    const url = new URL(
+      "{{ url_for('api_films_search') }}",
+      window.location.origin
+    );
+    url.searchParams.set("q", query);
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    return res.json();
+  };
+
+  const renderResults = (container, items, onPick) => {
+    container.innerHTML = "";
+    if (!items.length) {
+      container.classList.add("d-none");
+      return;
+    }
+    items.forEach((item) => {
+      const a = document.createElement("a");
+      a.href = "#";
+      a.className = "dropdown-item d-flex align-items-center gap-2 p-2";
+      a.innerHTML = `
+        <div class="flex-grow-1">
+          <div>${item.name}${item.year ? ` (${item.year})` : ""}</div>
+        </div>`;
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        onPick(item);
+        container.classList.add("d-none");
+      });
+      container.appendChild(a);
+    });
+    container.classList.remove("d-none");
+  };
+
+  const wireAutocomplete = (inputEl, resultsEl) => {
+    const handler = debounce(async () => {
+      const q = inputEl.value.trim();
+      // allow empty string to list all
+      const items = await searchFilms(q);
+      renderResults(resultsEl, items, (item) => {
+        inputEl.value = `${item.name}${item.year ? ` (${item.year})` : ""}`;
+        inputEl.dataset.slug = item.slug;
+      });
+      // Enter accepts first result
+      inputEl.onkeydown = (e) => {
+        if (e.key === "Enter" && items.length > 0) {
+          e.preventDefault();
+          inputEl.value = `${items[0].name}${
+            items[0].year ? ` (${items[0].year})` : ""
+          }`;
+          inputEl.dataset.slug = items[0].slug;
+          resultsEl.classList.add("d-none");
+        }
+      };
+    }, 250);
+    inputEl.addEventListener("input", handler);
+    inputEl.addEventListener("focus", handler);
+    document.addEventListener("click", (e) => {
+      if (!resultsEl.contains(e.target) && e.target !== inputEl) {
+        resultsEl.classList.add("d-none");
+      }
+    });
+  };
+
+  let compareChart;
+  const ensureChart = () => {
+    if (compareChart) return compareChart;
+    const ctx = document.getElementById("compareChart").getContext("2d");
+    compareChart = new Chart(ctx, {
+      type: "scatter",
+      data: { datasets: [] },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: { display: true, text: "Number of ratings" },
+            ticks: { callback: (v) => new Intl.NumberFormat().format(v) },
+          },
+          y: {
+            title: { display: true, text: "Average rating" },
+            suggestedMin: 0,
+            suggestedMax: 5,
+          },
+        },
+        plugins: { legend: { display: true } },
+      },
+    });
+    return compareChart;
+  };
+
+  const refreshChart = async () => {
+    const empty = $("#emptyState");
+    if (!selected.length) {
+      if (compareChart) {
+        compareChart.data.datasets = [];
+        compareChart.update();
+      }
+      empty.classList.remove("d-none");
+      return;
+    }
+    empty.classList.add("d-none");
+    const url = new URL("{{ url_for('api_compare') }}", window.location.origin);
+    url.searchParams.set("slugs", selected.join(","));
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const json = await res.json();
+    const chart = ensureChart();
+    const order = json.order || selected;
+    chart.data.datasets = order.map((slug, idx) => {
+      const meta = json.films[slug];
+      const color = palette[idx % palette.length];
+      return {
+        label: `${meta.name}${meta.year ? ` (${meta.year})` : ""}`,
+        data: json.datasets[slug],
+        backgroundColor: color,
+        borderColor: color,
+        pointRadius: 3,
+        showLine: true,
+      };
+    });
+    chart.update();
+  };
+
+  const renderChips = () => {
+    const wrap = $("#selectedChips");
+    wrap.innerHTML = "";
+    // Try to fetch latest names to label chips nicely
+    const labelMap = new Map();
+    const setChip = (slug, idx, label) => {
+      const chip = createEl("span", "chip");
+      const color = palette[idx % palette.length];
+      chip.style.borderColor = color;
+      chip.style.background = "rgba(255,255,255,0.02)";
+      const text = createEl("span");
+      text.textContent = label || slug;
+      const close = createEl("a", "chip-close");
+      close.href = "#";
+      close.innerHTML = '<i class="fas fa-times"></i>';
+      close.addEventListener("click", (e) => {
+        e.preventDefault();
+        selected = selected.filter((s) => s !== slug);
+        updateUrl();
+        renderChips();
+        refreshChart();
+      });
+      chip.appendChild(text);
+      chip.appendChild(close);
+      wrap.appendChild(chip);
+    };
+
+    const doRender = (meta) => {
+      selected.forEach((slug, idx) => {
+        const m = meta && meta[slug];
+        const label = m ? `${m.name}${m.year ? ` (${m.year})` : ""}` : slug;
+        setChip(slug, idx, label);
+      });
+    };
+
+    // Prefer using the same payload as chart, but if none yet, render with slugs
+    (async () => {
+      if (!selected.length) return;
+      const url = new URL(
+        "{{ url_for('api_compare') }}",
+        window.location.origin
+      );
+      url.searchParams.set("slugs", selected.join(","));
+      const res = await fetch(url);
+      if (!res.ok) {
+        doRender(null);
+        return;
+      }
+      const json = await res.json();
+      doRender(json.films || null);
+    })();
+  };
+
+  const addFromInput = async () => {
+    const input = $("#filmSearch");
+    let slug = input.dataset.slug || input.value.trim();
+    if (!slug) return;
+    // If user typed a title, try to resolve to slug
+    if (!slug.includes("-")) {
+      const items = await searchFilms(slug);
+      if (items && items.length) {
+        slug = items[0].slug;
+      }
+    }
+    if (!slug) return;
+    if (!selected.includes(slug)) {
+      selected.push(slug);
+    }
+    input.value = "";
+    input.dataset.slug = "";
+    updateUrl();
+    renderChips();
+    refreshChart();
+  };
+
+  // Wire UI
+  wireAutocomplete($("#filmSearch"), $("#results"));
+  $("#addBtn").addEventListener("click", addFromInput);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && document.activeElement === $("#filmSearch")) {
+      addFromInput();
+    }
+  });
+
+  // Initial state (handle prefill)
+  (async () => {
+    updateUrl();
+    renderChips();
+    if (prefillSlug) {
+      await refreshChart();
+    }
+  })();
+</script>
+{% endblock %}

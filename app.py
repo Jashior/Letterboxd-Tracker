@@ -7,10 +7,12 @@ from functools import wraps
 import re
 import sys
 from datetime import datetime
+from collections import defaultdict
 import logging
 
 from config import Config
 from models import db, Film, RatingSnapshot  # Remove FilmRatingHistory
+from sqlalchemy import or_
 from scraper import get_film_data
 from tasks import run_scrape_job_for_film  # Import from new tasks.py
 from scheduler import init_scheduler, scheduler, SCRAPE_JOB_ID  # Import the initializer and scheduler instance
@@ -324,6 +326,104 @@ def api_film_ratings(letterboxd_slug):
             {"label": "Average Rating", "data": avg_ratings},
             {"label": "Rating Count", "data": rating_counts}
         ]
+    })
+
+
+# --- Compare Page and APIs ---
+@app.route('/compare')
+def compare():
+    # Optional prefill of a film via query param
+    prefill = request.args.get('prefill', '').strip()
+    return render_template('public/compare.html', prefill=prefill)
+
+
+@app.route('/api/films/search')
+def api_films_search():
+    query = request.args.get('q', '').strip()
+    q = Film.query
+    if query:
+        like = f"%{query}%"
+        q = q.filter(or_(Film.display_name.ilike(like), Film.letterboxd_slug.ilike(like)))
+    # Show both tracked and archived, tracked first
+    films = (
+        q.order_by(Film.is_tracked.desc(), Film.display_order.asc(), Film.display_name.asc())
+         .limit(50)
+         .all()
+    )
+    return jsonify([
+        {
+            "id": f.id,
+            "slug": f.letterboxd_slug,
+            "name": f.display_name,
+            "year": f.year,
+            "poster_url": f.poster_url,
+            "is_tracked": f.is_tracked,
+        }
+        for f in films
+    ])
+
+
+@app.route('/api/film_meta')
+def api_film_meta():
+    slug = request.args.get('slug', '').strip()
+    if not slug:
+        return jsonify({"error": "slug required"}), 400
+    film = Film.query.filter_by(letterboxd_slug=slug).first()
+    if not film:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({
+        "id": film.id,
+        "slug": film.letterboxd_slug,
+        "name": film.display_name,
+        "year": film.year,
+        "poster_url": film.poster_url,
+        "is_tracked": film.is_tracked,
+    })
+
+
+@app.route('/api/compare')
+def api_compare():
+    # Support multiple films: ?slugs=slug1,slug2,slug3
+    slugs_csv = request.args.get('slugs')
+    slugs = []
+    if slugs_csv:
+        slugs = [s.strip() for s in slugs_csv.split(',') if s.strip()]
+    else:
+        # Backward compatibility: a & b
+        a = request.args.get('a')
+        b = request.args.get('b')
+        if a: slugs.append(a)
+        if b: slugs.append(b)
+
+    if not slugs:
+        return jsonify({"error": "Provide film slugs via 'slugs' (comma-separated) or 'a'/'b'."}), 400
+
+    films = Film.query.filter(Film.letterboxd_slug.in_(slugs)).all()
+    by_slug = {f.letterboxd_slug: f for f in films}
+    missing = [s for s in slugs if s not in by_slug]
+    if missing:
+        return jsonify({"error": f"Films not found: {', '.join(missing)}"}), 404
+
+    film_meta = {}
+    datasets = {}
+    for s in slugs:
+        f = by_slug[s]
+        film_meta[s] = {"slug": f.letterboxd_slug, "name": f.display_name, "year": f.year}
+        snaps = (
+            RatingSnapshot.query
+            .filter_by(film_id=f.id)
+            .order_by(RatingSnapshot.timestamp.asc())
+            .all()
+        )
+        data_map = {}
+        for snap in snaps:
+            data_map[snap.rating_count] = snap.average_rating
+        datasets[s] = [{"x": x, "y": y} for x, y in sorted(data_map.items())]
+
+    return jsonify({
+        "films": film_meta,
+        "datasets": datasets,
+        "order": slugs,
     })
 
 

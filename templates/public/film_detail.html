@@ -232,6 +232,12 @@ History{% endblock %} {% block head_extra %}
       >
         <i class="fab fa-letterboxd"></i>View on Letterboxd
       </a>
+      <a
+        href="{{ url_for('compare', prefill=film.letterboxd_slug) }}"
+        class="btn btn-outline-info"
+      >
+        <i class="fas fa-balance-scale"></i>Compare
+      </a>
       <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left"></i>Back to Overview
       </a>

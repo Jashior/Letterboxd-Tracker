@@ -12,6 +12,7 @@ A Flask application to track the average rating and rating count of films on Let
 -   **Public View**: A simple public interface to view tracked films and their rating history.
 -   **API Endpoint**: Provides JSON data for charts.
 -   **Manual Scraping**: Trigger immediate scraping from the admin dashboard.
+-   **Compare Page**: Compare two films on a scatter plot (X: rating count, Y: average rating) with autocomplete search.
 
 ## Tech Stack
 
@@ -187,6 +188,22 @@ Access the admin dashboard at `http://127.0.0.1:5000/admin` and log in with your
 - View scheduler status and next run time
 - Reorder films in the display list
 - Delete films and their associated data
+
+---
+
+## Compare Page
+
+- Access via the navbar: `Compare`.
+- Select two films using the autocomplete inputs (search by title or slug).
+- The chart plots both films as scatter series:
+  - X axis: number of ratings
+  - Y axis: average rating
+- Different rating counts between the two films are fine; each series is plotted independently based on available snapshots.
+
+APIs used by the page:
+
+- `GET /api/films/search?q=<query>`: returns matching films for autocomplete.
+- `GET /api/compare?a=<slugA>&b=<slugB>`: returns scatter points for both films.
 
 **Adding Films:**
 1. Go to the film's page on Letterboxd (e.g., `https://letterboxd.com/film/28-years-later/`)
