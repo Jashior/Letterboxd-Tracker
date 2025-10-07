@@ -361,7 +361,46 @@ head_extra %}
     const json = await res.json();
     const chart = ensureChart();
     const order = json.order || selected;
-    // Optional downsampling for very dense datasets
+    // Density management utilities
+    // 1) Deduplicate by X (rating_count): keep the last point for each x.
+    const uniqueByX = (points) => {
+      if (!Array.isArray(points) || points.length === 0) return [];
+      const map = new Map();
+      for (const p of points) {
+        if (p && typeof p.x === "number") map.set(p.x, p);
+      }
+      return Array.from(map.keys())
+        .sort((a, b) => a - b)
+        .map((k) => map.get(k));
+    };
+
+    // 2) Collapse long flat runs (same Y within epsilon): keep first and last only
+    const collapseFlatRuns = (points, epsilon = 0.0001, minRun = 3) => {
+      if (!Array.isArray(points) || points.length === 0) return [];
+      const out = [];
+      let i = 0;
+      while (i < points.length) {
+        let j = i + 1;
+        while (
+          j < points.length &&
+          Math.abs((points[j]?.y ?? 0) - (points[i]?.y ?? 0)) <= epsilon
+        ) {
+          j++;
+        }
+        const runLen = j - i;
+        if (runLen >= minRun) {
+          // keep first and last to represent the plateau
+          out.push(points[i]);
+          out.push(points[j - 1]);
+        } else {
+          for (let k = i; k < j; k++) out.push(points[k]);
+        }
+        i = j;
+      }
+      return out;
+    };
+
+    // 3) Lightweight downsampling by fixed buckets
     const downsample = (points, maxPoints = 800) => {
       if (!Array.isArray(points) || points.length <= maxPoints)
         return points || [];
@@ -376,9 +415,15 @@ head_extra %}
     chart.data.datasets = order.map((slug, idx) => {
       const meta = json.films[slug];
       const color = palette[idx % palette.length];
+      let series = json.datasets[slug] || [];
+      // Pipeline: unique-by-x → collapse flat runs → downsample
+      series = uniqueByX(series);
+      series = collapseFlatRuns(series, 0.0001, 5);
+      series = downsample(series, 800);
+
       return {
         label: `${meta.name}${meta.year ? ` (${meta.year})` : ""}`,
-        data: downsample(json.datasets[slug]),
+        data: series,
         backgroundColor: color,
         borderColor: color,
         pointRadius: 3,
