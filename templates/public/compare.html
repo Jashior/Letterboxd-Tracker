@@ -76,6 +76,36 @@ head_extra %}
     position: relative;
     min-height: 260px;
   }
+  /* Discreet chart controls (e.g., log-scale toggle) */
+  .chart-controls {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    z-index: 2;
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 4px 8px;
+    box-shadow: var(--shadow-sm, 0 2px 6px rgba(0, 0, 0, 0.15));
+    opacity: 0.9;
+  }
+  .chart-controls .form-check {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chart-controls .form-check-input {
+    transform: scale(0.9);
+    cursor: pointer;
+  }
+  .chart-controls .form-check-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+    cursor: pointer;
+    white-space: nowrap;
+  }
   #emptyState {
     position: absolute;
     top: 50%;
@@ -122,6 +152,15 @@ head_extra %}
 <div id="compareRoot" data-prefill="{{ prefill|e }}"></div>
 
 <div class="chart-container">
+  <div
+    class="chart-controls"
+    title="Toggle logarithmic scale for rating counts"
+  >
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" id="xLogToggle" />
+      <label class="form-check-label" for="xLogToggle">Log scale</label>
+    </div>
+  </div>
   <canvas id="compareChart" height="120"></canvas>
   <div id="emptyState" class="text-center text-muted py-4">
     No films selected yet.
@@ -173,6 +212,16 @@ head_extra %}
     }
   };
 
+  const getUrlXLog = () => {
+    try {
+      const url = new URL(window.location.href);
+      const v = (url.searchParams.get("xlog") || "").toLowerCase();
+      return v === "1" || v === "true";
+    } catch (_) {
+      return false;
+    }
+  };
+
   const updateUrl = () => {
     try {
       const url = new URL(window.location.href);
@@ -181,6 +230,12 @@ head_extra %}
         url.searchParams.delete("prefill"); // prefer slugs once present
       } else {
         url.searchParams.delete("slugs");
+      }
+      const xLog = document.getElementById("xLogToggle");
+      if (xLog && xLog.checked) {
+        url.searchParams.set("xlog", "1");
+      } else {
+        url.searchParams.delete("xlog");
       }
       window.history.replaceState({}, "", url);
     } catch (_) {}
@@ -222,6 +277,8 @@ head_extra %}
         e.preventDefault();
         onPick(item);
         container.classList.add("d-none");
+        // Immediately add the selected film and clear input
+        addFromInput();
       });
       container.appendChild(a);
     });
@@ -246,6 +303,8 @@ head_extra %}
           }`;
           inputEl.dataset.slug = items[0].slug;
           resultsEl.classList.add("d-none");
+          // Immediately add the first result
+          addFromInput();
         }
       };
     }, 250);
@@ -302,12 +361,24 @@ head_extra %}
     const json = await res.json();
     const chart = ensureChart();
     const order = json.order || selected;
+    // Optional downsampling for very dense datasets
+    const downsample = (points, maxPoints = 800) => {
+      if (!Array.isArray(points) || points.length <= maxPoints)
+        return points || [];
+      const bucketSize = Math.ceil(points.length / maxPoints);
+      const sampled = [];
+      for (let i = 0; i < points.length; i += bucketSize) {
+        sampled.push(points[i]);
+      }
+      return sampled;
+    };
+
     chart.data.datasets = order.map((slug, idx) => {
       const meta = json.films[slug];
       const color = palette[idx % palette.length];
       return {
         label: `${meta.name}${meta.year ? ` (${meta.year})` : ""}`,
-        data: json.datasets[slug],
+        data: downsample(json.datasets[slug]),
         backgroundColor: color,
         borderColor: color,
         pointRadius: 3,
@@ -331,6 +402,10 @@ head_extra %}
       chart.options.scales.y.min = yMin;
       chart.options.scales.y.max = yMax;
     } catch (_) {}
+    // Toggle log scale for X-axis when enabled
+    const xLog = document.getElementById("xLogToggle");
+    const useLog = !!(xLog && xLog.checked);
+    chart.options.scales.x.type = useLog ? "logarithmic" : "linear";
     chart.update();
   };
 
@@ -420,6 +495,15 @@ head_extra %}
 
   // Initial state (handle prefill)
   (async () => {
+    // Initialize xlog checkbox from URL, then sync URL and render
+    const xLog = document.getElementById("xLogToggle");
+    if (xLog) {
+      xLog.checked = getUrlXLog();
+      xLog.addEventListener("change", () => {
+        updateUrl();
+        refreshChart();
+      });
+    }
     updateUrl();
     renderChips();
     if (prefillSlug) {
